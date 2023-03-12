@@ -171,8 +171,8 @@ fn main() {
         if input.on_gamepad {
             input.is_right_down = rl.is_gamepad_button_down(0, GAMEPAD_BUTTON_LEFT_FACE_RIGHT) || rl.get_gamepad_axis_movement(0, GAMEPAD_AXIS_LEFT_X) > GAMEPAD_DEADZONE;
             input.is_left_down = rl.is_gamepad_button_down(0, GAMEPAD_BUTTON_LEFT_FACE_LEFT) || rl.get_gamepad_axis_movement(0, GAMEPAD_AXIS_LEFT_X) < -GAMEPAD_DEADZONE;
-            input.is_down_down = rl.is_gamepad_button_down(0, GAMEPAD_BUTTON_LEFT_FACE_UP) || rl.get_gamepad_axis_movement(0, GAMEPAD_AXIS_LEFT_Y) < -GAMEPAD_DEADZONE;
-            input.is_up_down = rl.is_gamepad_button_down(0, GAMEPAD_BUTTON_LEFT_FACE_DOWN) || rl.get_gamepad_axis_movement(0, GAMEPAD_AXIS_LEFT_Y) > GAMEPAD_DEADZONE;
+            input.is_down_down = rl.is_gamepad_button_down(0, GAMEPAD_BUTTON_LEFT_FACE_DOWN) || rl.get_gamepad_axis_movement(0, GAMEPAD_AXIS_LEFT_Y) < -GAMEPAD_DEADZONE;
+            input.is_up_down = rl.is_gamepad_button_down(0, GAMEPAD_BUTTON_LEFT_FACE_UP) || rl.get_gamepad_axis_movement(0, GAMEPAD_AXIS_LEFT_Y) > GAMEPAD_DEADZONE;
         }
         else {
             input.is_right_down = rl.is_key_down(KEY_D) || rl.is_key_down(KEY_RIGHT);
