@@ -2,9 +2,18 @@ use rand;
 use rand::Rng;
 use rand::thread_rng;
 use raylib::prelude::*;
+use raylib::prelude::Vector2;
 use raylib::consts::KeyboardKey::*;
 use raylib::consts::GamepadAxis::*;
 use raylib::consts::GamepadButton::*;
+
+const VECTOR_ZERO: Vector2 = Vector2 { x: 0.0, y: 0.0 };
+const VECTOR_ONE: Vector2 = Vector2 { x: 1.0, y: 1.0 };
+
+const SCREEN_SIZE: Vector2 = Vector2 { x: 640.0, y: 480.0 };
+const GAMEPAD_DEADZONE: f32 = 0.7;
+const PADDLE_PADDING: f32 = 20.0;
+const PADDLE_SIZE: Vector2 = Vector2 { x: 11.0, y: 65.0 };
 
 struct PlayerInput {
     on_gamepad: bool,
@@ -24,8 +33,8 @@ impl PlayerInput {
         return Self {
             on_gamepad: false,
             smoothness: 0.0,
-            raw_dir: Vector2::zero(),
-            dir: Vector2::zero(),
+            raw_dir: VECTOR_ZERO,
+            dir: VECTOR_ZERO,
             is_right_down: false,
             is_left_down: false,
             is_down_down: false,
@@ -40,10 +49,6 @@ struct Ball {
     radius: f32,
     speed: f32
 }
-
-const SCREEN_SIZE: Vector2 = Vector2{x: 640.0, y: 480.0};
-const GAMEPAD_DEADZONE: f32 = 0.7;
-
 fn main() {
     let (mut rl, _thread) = raylib::init()
         .size(SCREEN_SIZE.x as i32, SCREEN_SIZE.y as i32)
@@ -52,53 +57,74 @@ fn main() {
     rl.set_target_fps(60);
     let mut show_stats = true;
 
-    let mut move_direction =Vector2::one();
+    let mut move_direction = Vector2 { x: -1.0, y: 0.0 };
     let mut player_velocity;
     let mut player = Ball {
         position: Vector2 { x: SCREEN_SIZE.x * 0.5, y: SCREEN_SIZE.y * 0.5 },
         color: Color::WHITE,
-        speed: 540.0,
+        speed: 500.0,
         radius: 10.0
     };
     
     let mut input = PlayerInput::new();
     input.smoothness = 3.0;
     
+    let mut left_paddle = Rectangle::new( 
+        PADDLE_PADDING, 
+        SCREEN_SIZE.y / 2.0 - PADDLE_SIZE.y / 2.0,
+        PADDLE_SIZE.x,
+        PADDLE_SIZE.y
+    );
+
+    let mut right_paddle = Rectangle::new(
+        SCREEN_SIZE.x - PADDLE_SIZE.x - PADDLE_PADDING,
+        SCREEN_SIZE.y / 2.0 - PADDLE_SIZE.y / 2.0,
+        PADDLE_SIZE.x,
+        PADDLE_SIZE.y
+    );
+
+
     // Each frame
     while !rl.window_should_close() {
         // <-- GAME LOGIC -->
         update_player_input(&mut input, &rl);
         player_velocity = input.dir * player.speed / 2.25;
+        
 
-        // If on horizontal screen edge
+        // Reset game if touches right or left screen
         if player.position.x == player.radius || player.position.x == SCREEN_SIZE.x - player.radius {
-            move_direction.x *= -1.0;
-
-            let y: f32 = thread_rng().gen();
-            if move_direction.y >= 0.0 { move_direction.y = y; }
-            else { move_direction.y = -y; }
-
-            input.dir = Vector2 { x: 0.0, y: 0.0 };
+            player.position = SCREEN_SIZE / 2.0;
+            move_direction = Vector2 { x: -1.0, y: 0.0 };
+            input.dir = VECTOR_ZERO;
         }
 
-        // If on vertical screen edge
+
+        // Bounce and reset player input when hit a paddle 
+        if left_paddle.check_collision_circle_rec(player.position, player.radius)
+        || right_paddle.check_collision_circle_rec(player.position, player.radius) {
+
+            // Get a new y angle, keeping the previous direction
+            let mut new_angle: f32 = thread_rng().gen();
+            if move_direction.y >= 0.0 { new_angle *= -1.0; }
+            
+            move_direction.x *= -1.0;
+            move_direction.y = new_angle;
+            input.dir = Vector2 { x: 0.0, y: 0.0 };
+        }
+        
+        // Bounce and reset player input when hit top or bottom screen
         if player.position.y == player.radius || player.position.y == SCREEN_SIZE.y - player.radius {
             move_direction.y *= -1.0;
             input.dir = Vector2 { x: 0.0, y: 0.0 };
-            /* // Get a new y direction keeping the same signal
-            let new_y: f32 = thread_rng().gen();
-            if move_direction.y >= 0.0 { move_direction.y = new_y; }
-            else { move_direction.y = -new_y; }
-
-            // move_direction.y *= -1.0;
-            input.dir = Vector2 { x: 0.0, y: 0.0 }; */
         }
 
-        // Move player
         player_velocity += move_direction * player.speed;
+
+        // Move player
         player.position += player_velocity * rl.get_frame_time();
         player.position.x = player.position.x.clamp(player.radius, SCREEN_SIZE.x - player.radius);
         player.position.y = player.position.y.clamp(player.radius, SCREEN_SIZE.y - player.radius);
+
 
 
         // <-- DRAW SCREEN -->
@@ -129,10 +155,12 @@ fn main() {
 
         draw_handle.draw_text("Pong 2", (SCREEN_SIZE.x * 0.465) as i32, (SCREEN_SIZE.y * 0.01) as i32, 18, Color::RED);
         draw_handle.draw_circle_v(player.position, player.radius, player.color);
-        
+        draw_handle.draw_rectangle_rec(&left_paddle, Color::GRAY);
+        draw_handle.draw_rectangle_rec(&right_paddle, Color::GRAY);
     }
-
+    
     fn update_player_input(input: &mut PlayerInput, rl: &RaylibHandle) {
+        // Gamepad data
         input.on_gamepad = rl.is_gamepad_available(0);
         let gamepad_axis = Vector2 {
             x: rl.get_gamepad_axis_movement(0, GAMEPAD_AXIS_LEFT_X),
@@ -154,7 +182,7 @@ fn main() {
         }
 
         // Get raw input direction
-        if input.on_gamepad && gamepad_axis != Vector2::zero() {
+        if input.on_gamepad && gamepad_axis != VECTOR_ZERO {
             input.raw_dir.x =  rl.get_gamepad_axis_movement(0, GAMEPAD_AXIS_LEFT_X);
             input.raw_dir.y =  rl.get_gamepad_axis_movement(0, GAMEPAD_AXIS_LEFT_Y);
         }
