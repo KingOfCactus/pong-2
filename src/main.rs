@@ -67,6 +67,7 @@ fn main() {
     };
     
     let mut input = PlayerInput::new();
+    let mut score = 0;
     input.smoothness = 3.0;
     
     let mut left_paddle = Rectangle::new( 
@@ -89,33 +90,45 @@ fn main() {
         // <-- GAME LOGIC -->
         update_player_input(&mut input, &rl);
         player_velocity = input.dir * player.speed / 2.25;
-        
 
         // Reset game if touches right or left screen
         if player.position.x == player.radius || player.position.x == SCREEN_SIZE.x - player.radius {
+            // Reset score
+            score = 0;
+            
+            // Reset input
+            input.dir = VECTOR_ZERO;
+
+            // Reset ball
             player.position = SCREEN_SIZE / 2.0;
             move_direction = Vector2 { x: -1.0, y: 0.0 };
-            input.dir = VECTOR_ZERO;
         }
 
 
-        // Bounce and reset player input when hit a paddle 
-        if left_paddle.check_collision_circle_rec(player.position, player.radius)
-        || right_paddle.check_collision_circle_rec(player.position, player.radius) {
-
+        // Bounce when hit a paddle 
+        if left_paddle.check_collision_circle_rec(player.position, player.radius + 5.0)
+        || right_paddle.check_collision_circle_rec(player.position, player.radius + 5.0) {
             // Get a new y angle, keeping the previous direction
             let mut new_angle: f32 = thread_rng().gen();
             if move_direction.y >= 0.0 { new_angle *= -1.0; }
             
+            // Set new direction
             move_direction.x *= -1.0;
             move_direction.y = new_angle;
+
+            // Reset player input and velocity
+            player_velocity = VECTOR_ZERO;
             input.dir = Vector2 { x: 0.0, y: 0.0 };
+
+            // Increase score
+            score += 1;
         }
         
-        // Bounce and reset player input when hit top or bottom screen
+        // Bounce when hit top or bottom screen
         if player.position.y == player.radius || player.position.y == SCREEN_SIZE.y - player.radius {
+            // Invert direction and reset vertical input
             move_direction.y *= -1.0;
-            input.dir = Vector2 { x: 0.0, y: 0.0 };
+            input.dir.y = 0.0;
         }
 
         player_velocity += move_direction * player.speed;
@@ -153,7 +166,7 @@ fn main() {
             draw_handle.draw_text(&stats, 0, (SCREEN_SIZE.y * 0.05) as i32, 18, Color::GREEN);
         }
 
-        draw_handle.draw_text("Pong 2", (SCREEN_SIZE.x * 0.465) as i32, (SCREEN_SIZE.y * 0.01) as i32, 18, Color::RED);
+        draw_handle.draw_text(score.to_string().as_str(), (SCREEN_SIZE.x * 0.48) as i32, (SCREEN_SIZE.y * 0.01) as i32, 22, Color::RED);
         draw_handle.draw_circle_v(player.position, player.radius, player.color);
         draw_handle.draw_rectangle_rec(&left_paddle, Color::GRAY);
         draw_handle.draw_rectangle_rec(&right_paddle, Color::GRAY);
