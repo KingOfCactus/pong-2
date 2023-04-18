@@ -8,12 +8,13 @@ use raylib::consts::GamepadAxis::*;
 use raylib::consts::GamepadButton::*;
 
 const VECTOR_ZERO: Vector2 = Vector2 { x: 0.0, y: 0.0 };
-const VECTOR_ONE: Vector2 = Vector2 { x: 1.0, y: 1.0 };
+//const VECTOR_ONE: Vector2 = Vector2 { x: 1.0, y: 1.0 };
 
 const SCREEN_SIZE: Vector2 = Vector2 { x: 640.0, y: 480.0 };
 const GAMEPAD_DEADZONE: f32 = 0.7;
 const PADDLE_PADDING: f32 = 20.0;
 const PADDLE_SIZE: Vector2 = Vector2 { x: 11.0, y: 65.0 };
+const PADDLE_VELOCITY: f32 = 500.0;
 
 struct PlayerInput {
     on_gamepad: bool,
@@ -84,66 +85,102 @@ fn main() {
         PADDLE_SIZE.y
     );
 
+    let input_multiplier = Vector2 { x: player.speed / 2.25, y: player.speed / 1.70 };
+    let mut alpha = 185.0;
 
     // Each frame
     while !rl.window_should_close() {
         // <-- GAME LOGIC -->
         update_player_input(&mut input, &rl);
-        player_velocity = input.dir * player.speed / 2.25;
+
+        // Set player color
+        if input.raw_dir != VECTOR_ZERO { 
+            alpha += 340.0 * ((input.dir.x.abs() + input.dir.y.abs())) * rl.get_frame_time(); 
+        }
+        else { 
+            alpha -= 500.0 * (1.0 - (input.dir.x.abs() + input.dir.y.abs()) / 2.0) * rl.get_frame_time(); 
+        }
+
+        alpha = alpha.clamp(185.0, 255.0);
+        player.color.a = alpha as u8;
 
         // Reset game if touches right or left screen
         if player.position.x == player.radius || player.position.x == SCREEN_SIZE.x - player.radius {
-            // Reset score
+            // Reset stats
             score = 0;
-            
-            // Reset input
             input.dir = VECTOR_ZERO;
 
-            // Reset ball
+            // Reset player
             player.position = SCREEN_SIZE / 2.0;
             move_direction = Vector2 { x: -1.0, y: 0.0 };
         }
 
-
-        // Bounce when hit a paddle 
-        if left_paddle.check_collision_circle_rec(player.position, player.radius + 5.0)
-        || right_paddle.check_collision_circle_rec(player.position, player.radius + 5.0) {
-            // Get a new y angle, keeping the previous direction
+        // Bounce when hit a paddle
+        let hit_left_paddle = left_paddle.check_collision_circle_rec(player.position, player.radius + 5.0);
+        let hit_right_paddle = right_paddle.check_collision_circle_rec(player.position, player.radius + 5.0);
+        
+        if hit_left_paddle || hit_right_paddle {
             let mut new_angle: f32 = thread_rng().gen();
-            if move_direction.y >= 0.0 { new_angle *= -1.0; }
+
+            // Copy input direction or keep previous direction 
+            if input.raw_dir.y == 0.0 { new_angle *= move_direction.y.signum(); }
+            else { new_angle *= input.raw_dir.y.signum(); }
             
+            // Keep player out of the paddles
+            let min = left_paddle.x + PADDLE_SIZE.x + player.radius;
+            let max = right_paddle.x - PADDLE_SIZE.x - player.radius;
+            player.position = player.position.clamp(min, max);
+
             // Set new direction
             move_direction.x *= -1.0;
             move_direction.y = new_angle;
-
-            // Reset player input and velocity
-            player_velocity = VECTOR_ZERO;
             input.dir = Vector2 { x: 0.0, y: 0.0 };
 
-            // Increase score
+            // Set new player stats
+            player_velocity = VECTOR_ZERO;          
             score += 1;
         }
-        
+
         // Bounce when hit top or bottom screen
         if player.position.y == player.radius || player.position.y == SCREEN_SIZE.y - player.radius {
-            // Invert direction and reset vertical input
-            move_direction.y *= -1.0;
+            let mut new_angle = move_direction.y.abs();
+            new_angle = new_angle.clamp(0.6, 1.0);
+
+            new_angle *= -move_direction.y.signum();
+            move_direction.y = new_angle;
+            
+            input.dir.x *= 0.5;
             input.dir.y = 0.0;
         }
 
+        // Set velocity
+        player_velocity = input.dir * input_multiplier;
         player_velocity += move_direction * player.speed;
 
-        // Move player
+        // Apply velocity
         player.position += player_velocity * rl.get_frame_time();
         player.position.x = player.position.x.clamp(player.radius, SCREEN_SIZE.x - player.radius);
         player.position.y = player.position.y.clamp(player.radius, SCREEN_SIZE.y - player.radius);
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
         // <-- DRAW SCREEN -->
         if rl.is_key_pressed(KEY_TAB) || rl.is_gamepad_button_pressed(0, GAMEPAD_BUTTON_MIDDLE_RIGHT) { show_stats = !show_stats; }
         let mut stats;
-        stats = "(".to_owned() + format!("{:.2}", input.raw_dir.x).as_str() + ", " + format!("{:.2}", input.raw_dir.y).as_str() + ")\n";
+        stats = "(".to_owned() + format!("{:.2}", move_direction.x).as_str() + ", " + format!("{:.2}", move_direction.y).as_str() + ")\n";
         stats = stats + "(" + format!("{:.2}", input.dir.x).as_str() + ", " + format!("{:.2}", input.dir.y).as_str() + ")\n";
         if input.on_gamepad {
             stats = stats + &rl.get_gamepad_name(0).expect("UNKNOWN") + " Connected \n";
@@ -172,15 +209,25 @@ fn main() {
         draw_handle.draw_rectangle_rec(&right_paddle, Color::GRAY);
     }
     
+
+
+
+
+
+
+
+
+
+
     fn update_player_input(input: &mut PlayerInput, rl: &RaylibHandle) {
-        // Gamepad data
+        // Update gamepad data
         input.on_gamepad = rl.is_gamepad_available(0);
         let gamepad_axis = Vector2 {
             x: rl.get_gamepad_axis_movement(0, GAMEPAD_AXIS_LEFT_X),
             y: rl.get_gamepad_axis_movement(0, GAMEPAD_AXIS_LEFT_Y)
         };
 
-        // Get buttons state
+        // Update buttons state
         if input.on_gamepad {
             input.is_right_down = rl.is_gamepad_button_down(0, GAMEPAD_BUTTON_LEFT_FACE_RIGHT) || rl.get_gamepad_axis_movement(0, GAMEPAD_AXIS_LEFT_X) > GAMEPAD_DEADZONE;
             input.is_left_down = rl.is_gamepad_button_down(0, GAMEPAD_BUTTON_LEFT_FACE_LEFT) || rl.get_gamepad_axis_movement(0, GAMEPAD_AXIS_LEFT_X) < -GAMEPAD_DEADZONE;
@@ -194,7 +241,7 @@ fn main() {
             input.is_up_down = rl.is_key_down(KEY_W) || rl.is_key_down(KEY_UP);
         }
 
-        // Get raw input direction
+        // Update raw direction
         if input.on_gamepad && gamepad_axis != VECTOR_ZERO {
             input.raw_dir.x =  rl.get_gamepad_axis_movement(0, GAMEPAD_AXIS_LEFT_X);
             input.raw_dir.y =  rl.get_gamepad_axis_movement(0, GAMEPAD_AXIS_LEFT_Y);
@@ -211,6 +258,7 @@ fn main() {
 
         // Smooth raw_dir into input direction
         input.dir = input.dir.lerp(input.raw_dir, input.smoothness * rl.get_frame_time());
+
 
     }
 }
