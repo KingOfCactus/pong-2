@@ -163,18 +163,28 @@ fn main() {
         player.position.y = player.position.y.clamp(player.radius, SCREEN_SIZE.y - player.radius);
 
 
+        // LEFT PADDLET
+        let mut paddlet_speed: f32 = 500.0;
+        let mut paddlet_view_range = 0.5;
+
+        println!("{}", ((player.position.x - SCREEN_SIZE.x * paddlet_view_range) / (right_paddle.x - SCREEN_SIZE.x * paddlet_view_range)).powf(2.0));
+        let mut left_paddlet_target = (player.position.y - left_paddle.y) * 100.0 * (1.0 - ((player.position.x + left_paddle.x) / (SCREEN_SIZE.x * paddlet_view_range))).powf(2.0);
+        if left_paddlet_target.abs() < 20.0 { left_paddlet_target = 0.0 }
+        else { left_paddlet_target = left_paddlet_target.clamp(-paddlet_speed, paddlet_speed) }
+
+        if player.position.x - left_paddle.x > SCREEN_SIZE.x * paddlet_view_range { left_paddlet_target = 0.0 }
+
+        left_paddle.y += left_paddlet_target * rl.get_frame_time();
 
 
+        // RIGHT PADDLET
+        let mut right_paddlet_target = (player.position.y - right_paddle.y) * 100.0 * ((player.position.x - SCREEN_SIZE.x * paddlet_view_range) / (right_paddle.x - SCREEN_SIZE.x * paddlet_view_range)).powf(2.0);
+        if right_paddlet_target.abs() < 10.0 { right_paddlet_target = 0.0 }
+        else { right_paddlet_target = right_paddlet_target.clamp(-paddlet_speed, paddlet_speed) }
 
+        if (right_paddle.x - player.position.x > SCREEN_SIZE.x * paddlet_view_range) { right_paddlet_target = 0.0 }
 
-
-
-
-
-
-
-
-
+        right_paddle.y += right_paddlet_target * rl.get_frame_time();
 
 
         // <-- DRAW SCREEN -->
