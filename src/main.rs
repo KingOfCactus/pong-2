@@ -104,15 +104,18 @@ fn main() {
         alpha = alpha.clamp(185.0, 255.0);
         player.color.a = alpha as u8;
 
-        // Reset game if touches right or left screen
-        if player.position.x == player.radius || player.position.x == SCREEN_SIZE.x - player.radius {
+        // Restart if player is outside of the screen
+        if player.position.x > SCREEN_SIZE.x || player.position.x < 0.0 {
             // Reset stats
             score = 0;
             input.dir = VECTOR_ZERO;
-
-            // Reset player
-            player.position = SCREEN_SIZE / 2.0;
             move_direction = Vector2 { x: -1.0, y: 0.0 };
+
+            // Reset paddles
+            player.position = SCREEN_SIZE / 2.0;
+            left_paddle.y =  SCREEN_SIZE.y / 2.0 - PADDLE_SIZE.y / 2.0;
+            right_paddle.y =  SCREEN_SIZE.y / 2.0 - PADDLE_SIZE.y / 2.0;
+
         }
 
         // Bounce when hit a paddle
@@ -159,16 +162,16 @@ fn main() {
 
         // Apply velocity
         player.position += player_velocity * rl.get_frame_time();
-        player.position.x = player.position.x.clamp(player.radius, SCREEN_SIZE.x - player.radius);
         player.position.y = player.position.y.clamp(player.radius, SCREEN_SIZE.y - player.radius);
 
 
         // LEFT PADDLET
         let mut paddlet_speed: f32 = 500.0;
         let mut paddlet_view_range = 0.5;
+        
+        let player_distance = (1.0 - ((player.position.x + left_paddle.x) / (SCREEN_SIZE.x * paddlet_view_range))).powf(2.0);
 
-        println!("{}", ((player.position.x - SCREEN_SIZE.x * paddlet_view_range) / (right_paddle.x - SCREEN_SIZE.x * paddlet_view_range)).powf(2.0));
-        let mut left_paddlet_target = (player.position.y - left_paddle.y) * 100.0 * (1.0 - ((player.position.x + left_paddle.x) / (SCREEN_SIZE.x * paddlet_view_range))).powf(2.0);
+        let mut left_paddlet_target = (player.position.y - left_paddle.y) * player_distance * 80.0;
         if left_paddlet_target.abs() < 20.0 { left_paddlet_target = 0.0 }
         else { left_paddlet_target = left_paddlet_target.clamp(-paddlet_speed, paddlet_speed) }
 
@@ -178,7 +181,9 @@ fn main() {
 
 
         // RIGHT PADDLET
-        let mut right_paddlet_target = (player.position.y - right_paddle.y) * 100.0 * ((player.position.x - SCREEN_SIZE.x * paddlet_view_range) / (right_paddle.x - SCREEN_SIZE.x * paddlet_view_range)).powf(2.0);
+        let player_distance = ((player.position.x - SCREEN_SIZE.x * paddlet_view_range) / (right_paddle.x - SCREEN_SIZE.x * paddlet_view_range)).powf(2.0);
+
+        let mut right_paddlet_target = (player.position.y - right_paddle.y) * player_distance * 80.0;
         if right_paddlet_target.abs() < 10.0 { right_paddlet_target = 0.0 }
         else { right_paddlet_target = right_paddlet_target.clamp(-paddlet_speed, paddlet_speed) }
 
@@ -213,7 +218,10 @@ fn main() {
             draw_handle.draw_text(&stats, 0, (SCREEN_SIZE.y * 0.05) as i32, 18, Color::GREEN);
         }
 
-        draw_handle.draw_text(score.to_string().as_str(), (SCREEN_SIZE.x * 0.48) as i32, (SCREEN_SIZE.y * 0.01) as i32, 22, Color::RED);
+        let text_X = SCREEN_SIZE.x / 2.0 - (measure_text(score.to_string().as_str(), 22) as f32 / 2.0);
+
+
+        draw_handle.draw_text(score.to_string().as_str(), text_X as i32, (SCREEN_SIZE.y * 0.01) as i32, 22, Color::RED);
         draw_handle.draw_circle_v(player.position, player.radius, player.color);
         draw_handle.draw_rectangle_rec(&left_paddle, Color::GRAY);
         draw_handle.draw_rectangle_rec(&right_paddle, Color::GRAY);
