@@ -1,4 +1,6 @@
 use rand;
+use std::fs;
+use std::io::Write;
 use rand::Rng;
 use rand::thread_rng;
 use raylib::prelude::*;
@@ -88,6 +90,8 @@ fn main() {
     let input_multiplier = Vector2 { x: player.speed / 2.25, y: player.speed / 1.70 };
     let mut alpha = 185.0;
 
+    let mut highscore = get_highscore();
+    
     // Each frame
     while !rl.window_should_close() {
         // <-- GAME LOGIC -->
@@ -106,15 +110,21 @@ fn main() {
 
         // Restart if player is outside of the screen
         if player.position.x > SCREEN_SIZE.x || player.position.x < 0.0 {
-            // Reset stats
-            score = 0;
-            input.dir = VECTOR_ZERO;
-            move_direction = Vector2 { x: -1.0, y: 0.0 };
 
-            // Reset paddles
+            // Reset variables
             player.position = SCREEN_SIZE / 2.0;
             left_paddle.y =  SCREEN_SIZE.y / 2.0 - PADDLE_SIZE.y / 2.0;
             right_paddle.y =  SCREEN_SIZE.y / 2.0 - PADDLE_SIZE.y / 2.0;
+
+            input.dir = VECTOR_ZERO;
+            move_direction = Vector2 { x: -1.0, y: 0.0 };
+
+            // Check for a new highscore
+            if score > highscore { 
+                save_highscore(score);
+                highscore = score;
+            }
+            else { score = 0 }
 
         }
 
@@ -218,10 +228,11 @@ fn main() {
             draw_handle.draw_text(&stats, 0, (SCREEN_SIZE.y * 0.05) as i32, 18, Color::GREEN);
         }
 
-        let text_X = SCREEN_SIZE.x / 2.0 - (measure_text(score.to_string().as_str(), 22) as f32 / 2.0);
+        let text = "Hiscore: ".to_owned() + &highscore.to_string() + "\nScore: " + &score.to_string();
+        let text_x = SCREEN_SIZE.x / 2.0 - (measure_text(&text, 22) as f32 / 2.0);
 
-
-        draw_handle.draw_text(score.to_string().as_str(), text_X as i32, (SCREEN_SIZE.y * 0.01) as i32, 22, Color::RED);
+        draw_handle.draw_text(&text, text_x as i32, (SCREEN_SIZE.y * 0.01) as i32, 22, Color::RED);
+        
         draw_handle.draw_circle_v(player.position, player.radius, player.color);
         draw_handle.draw_rectangle_rec(&left_paddle, Color::GRAY);
         draw_handle.draw_rectangle_rec(&right_paddle, Color::GRAY);
@@ -233,9 +244,26 @@ fn main() {
 
 
 
+    fn get_highscore() -> i32 {
+        match fs::read_to_string("highscore.txt") {
+            Ok(s) => return s.parse::<i32>().unwrap(),
 
+            // Create file if doesn't exist
+            _ => { 
+                println!("File 'highscore.txt' doesn't exist, creating...");
+                let mut file = fs::File::create("highscore.txt").unwrap();
+                file.write_all(b"0").unwrap();
+                return 0;
+             }
+        }
+    }
 
+    fn save_highscore(i: i32) {
+        let mut file = fs::OpenOptions::new().write(true).open("highscore.txt").unwrap();
+        let mut buffer: String = i.to_string();
 
+        file.write_all(buffer.as_bytes()).unwrap();
+    }
 
     fn update_player_input(input: &mut PlayerInput, rl: &RaylibHandle) {
         // Update gamepad data
