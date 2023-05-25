@@ -3,7 +3,6 @@ use raylib::consts::KeyboardKey::*;
 use raylib::consts::GamepadAxis::*;
 use raylib::consts::GamepadButton::*;
 
-const VECTOR_ZERO: Vector2 = Vector2 { x: 0.0, y: 0.0 };
 const GAMEPAD_DEADZONE: f32 = 0.7;
 
 pub struct InputData {
@@ -25,8 +24,8 @@ impl InputData {
             on_gamepad: false,
 
             smoothness: 0.0,
-            raw_dir: VECTOR_ZERO,
-            dir: VECTOR_ZERO,
+            raw_dir: Vector2::zero(),
+            dir: Vector2::zero(),
 
             is_right_down: false,
             is_left_down: false,
@@ -58,7 +57,7 @@ impl InputData {
         }
     
         // Update raw direction
-        if input.on_gamepad && gamepad_axis != VECTOR_ZERO {
+        if input.on_gamepad && gamepad_axis != Vector2::zero() {
             input.raw_dir.x =  rl.get_gamepad_axis_movement(0, GAMEPAD_AXIS_LEFT_X);
             input.raw_dir.y =  rl.get_gamepad_axis_movement(0, GAMEPAD_AXIS_LEFT_Y);
         }

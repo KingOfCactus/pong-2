@@ -1,4 +1,7 @@
 mod input_system;
+mod game_objects;
+
+use crate::game_objects::*;
 
 use rand;
 use std::fs;
@@ -11,20 +14,14 @@ use raylib::consts::KeyboardKey::*;
 use raylib::consts::GamepadAxis::*;
 use raylib::consts::GamepadButton::*;
 
+
 const VECTOR_ZERO: Vector2 = Vector2 { x: 0.0, y: 0.0 };
 //const VECTOR_ONE: Vector2 = Vector2 { x: 1.0, y: 1.0 };
 
 const SCREEN_SIZE: Vector2 = Vector2 { x: 640.0, y: 480.0 };
 const PADDLE_PADDING: f32 = 20.0;
 const PADDLE_SIZE: Vector2 = Vector2 { x: 11.0, y: 65.0 };
-const PADDLE_VELOCITY: f32 = 500.0;
 
-struct Ball {
-    position: Vector2,
-    color: Color,
-    radius: f32,
-    speed: f32
-}
 fn main() {
     let (mut rl, _thread) = raylib::init()
         .size(SCREEN_SIZE.x as i32, SCREEN_SIZE.y as i32)
@@ -34,18 +31,15 @@ fn main() {
 
     let mut show_stats = true;
 
-    let mut move_direction = Vector2 { x: -1.0, y: 0.0 };
-    let mut player_velocity;
-    let mut player = Ball {
-        position: Vector2 { x: SCREEN_SIZE.x * 0.5, y: SCREEN_SIZE.y * 0.5 },
-        color: Color::WHITE,
-        speed: 500.0,
-        radius: 10.0
-    };
+    let mut player = Ball::new (
+        Vector2 { x: SCREEN_SIZE.x * 0.5, y: SCREEN_SIZE.y * 0.5 },
+        Color { r: 255, g: 255, b: 255, a: 185},
+        10.0,
+        500.0,
+    );
     
-    let mut input = input_system::InputData::new();
     let mut score = 0;
-    input.smoothness = 3.0;
+    player.input.smoothness = 3.0;
     
     let mut left_paddle = Rectangle::new( 
         PADDLE_PADDING, 
@@ -61,26 +55,18 @@ fn main() {
         PADDLE_SIZE.y
     );
 
-    let input_multiplier = Vector2 { x: player.speed / 2.25, y: player.speed / 1.70 };
-    let mut alpha = 185.0;
-
     let mut highscore = get_highscore();
-    
+
+    player.prone_dir = Vector2 { x: -1.0, y: 0.0}; 
+
     // Each frame
     while !rl.window_should_close() {
         // <-- GAME LOGIC -->
-        input_system::InputData::update_data(&mut input, &rl);
 
-        // Set player color
-        if input.raw_dir != VECTOR_ZERO { 
-            alpha += 340.0 * ((input.dir.x.abs() + input.dir.y.abs())) * rl.get_frame_time(); 
-        }
-        else { 
-            alpha -= 500.0 * (1.0 - (input.dir.x.abs() + input.dir.y.abs()) / 2.0) * rl.get_frame_time(); 
-        }
+        player.update(&mut rl);
 
-        alpha = alpha.clamp(185.0, 255.0);
-        player.color.a = alpha as u8;
+        // TODO: Remove from main
+        player.position.y = player.position.y.clamp(player.radius, SCREEN_SIZE.y - player.radius);
 
         // Restart if player is outside of the screen
         if player.position.x > SCREEN_SIZE.x || player.position.x < 0.0 {
@@ -90,8 +76,8 @@ fn main() {
             left_paddle.y =  SCREEN_SIZE.y / 2.0 - PADDLE_SIZE.y / 2.0;
             right_paddle.y =  SCREEN_SIZE.y / 2.0 - PADDLE_SIZE.y / 2.0;
 
-            input.dir = VECTOR_ZERO;
-            move_direction = Vector2 { x: -1.0, y: 0.0 };
+            player.input.dir = VECTOR_ZERO;
+            player.prone_dir = Vector2 { x: -1.0, y: 0.0 };
 
             // Check for a new highscore
             if score > highscore { 
@@ -109,9 +95,9 @@ fn main() {
         if hit_left_paddle || hit_right_paddle {
             let mut new_angle: f32 = thread_rng().gen();
 
-            // Copy input direction or keep previous direction 
-            if input.raw_dir.y == 0.0 { new_angle *= move_direction.y.signum(); }
-            else { new_angle *= input.raw_dir.y.signum(); }
+            // Copy player.input direction or keep previous direction 
+            if player.input.raw_dir.y == 0.0 { new_angle *= player.prone_dir.y.signum(); }
+            else { new_angle *= player.input.raw_dir.y.signum(); }
             
             // Keep player out of the paddles
             let min = left_paddle.x + PADDLE_SIZE.x + player.radius;
@@ -119,35 +105,26 @@ fn main() {
             player.position = player.position.clamp(min, max);
 
             // Set new direction
-            move_direction.x *= -1.0;
-            move_direction.y = new_angle;
-            input.dir = Vector2 { x: 0.0, y: 0.0 };
+            player.prone_dir.x *= -1.0;
+            player.prone_dir.y = new_angle;
+            player.input.dir = Vector2 { x: 0.0, y: 0.0 };
 
             // Set new player stats
-            player_velocity = VECTOR_ZERO;          
+            // player_velocity = VECTOR_ZERO;          
             score += 1;
         }
 
         // Bounce when hit top or bottom screen
         if player.position.y == player.radius || player.position.y == SCREEN_SIZE.y - player.radius {
-            let mut new_angle = move_direction.y.abs();
+            let mut new_angle = player.prone_dir.y.abs();
             new_angle = new_angle.clamp(0.6, 1.0);
 
-            new_angle *= -move_direction.y.signum();
-            move_direction.y = new_angle;
+            new_angle *= -player.prone_dir.y.signum();
+            player.prone_dir.y = new_angle;
             
-            input.dir.x *= 0.5;
-            input.dir.y = 0.0;
+            player.input.dir.x *= 0.5;
+            player.input.dir.y = 0.0;
         }
-
-        // Set velocity
-        player_velocity = input.dir * input_multiplier;
-        player_velocity += move_direction * player.speed;
-
-        // Apply velocity
-        player.position += player_velocity * rl.get_frame_time();
-        player.position.y = player.position.y.clamp(player.radius, SCREEN_SIZE.y - player.radius);
-
 
         // LEFT PADDLET
         let mut paddlet_speed: f32 = 500.0;
@@ -179,18 +156,18 @@ fn main() {
         // <-- DRAW SCREEN -->
         if rl.is_key_pressed(KEY_TAB) || rl.is_gamepad_button_pressed(0, GAMEPAD_BUTTON_MIDDLE_RIGHT) { show_stats = !show_stats; }
         let mut stats;
-        stats = "(".to_owned() + format!("{:.2}", move_direction.x).as_str() + ", " + format!("{:.2}", move_direction.y).as_str() + ")\n";
-        stats = stats + "(" + format!("{:.2}", input.dir.x).as_str() + ", " + format!("{:.2}", input.dir.y).as_str() + ")\n";
-        if input.on_gamepad {
+        stats = "(".to_owned() + format!("{:.2}", player.prone_dir.x).as_str() + ", " + format!("{:.2}", player.prone_dir.y).as_str() + ")\n";
+        stats = stats + "(" + format!("{:.2}", player.input.dir.x).as_str() + ", " + format!("{:.2}", player.input.dir.y).as_str() + ")\n";
+        if player.input.on_gamepad {
             stats = stats + &rl.get_gamepad_name(0).expect("UNKNOWN") + " Connected \n";
             stats = stats + "(" + format!("{:.2}", rl.get_gamepad_axis_movement(0, GAMEPAD_AXIS_LEFT_X)).as_str() + ", " + format!("{:.2}", rl.get_gamepad_axis_movement(0, GAMEPAD_AXIS_LEFT_Y)).as_str() + ")\n";
         }
         else {
             let mut keys_down = "".to_string();
-            if input.is_up_down { keys_down += "w "; }
-            if input.is_down_down { keys_down += "s "; }
-            if input.is_left_down { keys_down += "a "; }
-            if input.is_right_down { keys_down += "d "; }
+            if player.input.is_up_down { keys_down += "w "; }
+            if player.input.is_down_down { keys_down += "s "; }
+            if player.input.is_left_down { keys_down += "a "; }
+            if player.input.is_right_down { keys_down += "d "; }
             stats += &keys_down;
         }
 
