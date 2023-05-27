@@ -1,7 +1,9 @@
 mod input_system;
 mod game_objects;
+mod utils;
 
 use crate::game_objects::*;
+use crate::utils::*;
 
 use rand;
 use std::fs;
@@ -13,14 +15,6 @@ use raylib::prelude::Vector2;
 use raylib::consts::KeyboardKey::*;
 use raylib::consts::GamepadAxis::*;
 use raylib::consts::GamepadButton::*;
-
-
-const VECTOR_ZERO: Vector2 = Vector2 { x: 0.0, y: 0.0 };
-//const VECTOR_ONE: Vector2 = Vector2 { x: 1.0, y: 1.0 };
-
-const SCREEN_SIZE: Vector2 = Vector2 { x: 640.0, y: 480.0 };
-const PADDLE_PADDING: f32 = 20.0;
-const PADDLE_SIZE: Vector2 = Vector2 { x: 11.0, y: 65.0 };
 
 fn main() {
     let (mut rl, _thread) = raylib::init()
@@ -76,7 +70,7 @@ fn main() {
             left_paddle.y =  SCREEN_SIZE.y / 2.0 - PADDLE_SIZE.y / 2.0;
             right_paddle.y =  SCREEN_SIZE.y / 2.0 - PADDLE_SIZE.y / 2.0;
 
-            player.input.dir = VECTOR_ZERO;
+            player.input.dir = Vector2::zero();
             player.prone_dir = Vector2 { x: -1.0, y: 0.0 };
 
             // Check for a new highscore
