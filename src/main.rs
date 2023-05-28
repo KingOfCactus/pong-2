@@ -26,49 +26,61 @@ fn main() {
     let mut show_stats = true;
 
     let mut player = Ball::new (
-        Vector2 { x: SCREEN_SIZE.x * 0.5, y: SCREEN_SIZE.y * 0.5 },
+        Vector2 { x: SCREEN_SIZE.x * 0.9, y: SCREEN_SIZE.y * 0.5 },
         Color { r: 255, g: 255, b: 255, a: 185},
         10.0,
         500.0,
     );
-    
-    let mut score = 0;
+
     player.input.smoothness = 3.0;
-    
-    let mut left_paddle = Rectangle::new( 
-        PADDLE_PADDING, 
-        SCREEN_SIZE.y / 2.0 - PADDLE_SIZE.y / 2.0,
-        PADDLE_SIZE.x,
-        PADDLE_SIZE.y
+    player.prone_dir = Vector2 { x: -1.0, y: 0.0}; 
+
+    let mut paddlet_speed: f32 = 500.0;
+    let mut paddlet_view_range = 0.5;
+
+    let mut left_paddle = Paddle::new(
+        Vector2 { 
+            x: PADDLE_PADDING, 
+            y: SCREEN_SIZE.y / 2.0 - PADDLE_SIZE.y / 2.0 },
+        Color::WHITE,
+        PADDLE_SIZE,
+        paddlet_speed,
+        paddlet_view_range
     );
 
-    let mut right_paddle = Rectangle::new(
-        SCREEN_SIZE.x - PADDLE_SIZE.x - PADDLE_PADDING,
-        SCREEN_SIZE.y / 2.0 - PADDLE_SIZE.y / 2.0,
-        PADDLE_SIZE.x,
-        PADDLE_SIZE.y
+    let mut right_paddle = Paddle::new(
+        Vector2 { 
+            x: SCREEN_SIZE.x - PADDLE_SIZE.x - PADDLE_PADDING, 
+            y: SCREEN_SIZE.y / 2.0 - PADDLE_SIZE.y / 2.0 },
+        Color::WHITE,
+        PADDLE_SIZE,
+        paddlet_speed,
+        paddlet_view_range
     );
 
+    let mut score = 0;
     let mut highscore = get_highscore();
 
-    player.prone_dir = Vector2 { x: -1.0, y: 0.0}; 
 
     // Each frame
     while !rl.window_should_close() {
         // <-- GAME LOGIC -->
 
         player.update(&mut rl);
+        left_paddle.update(&mut rl);
+        right_paddle.update(&mut rl);
 
-        // TODO: Remove from main
-        player.position.y = player.position.y.clamp(player.radius, SCREEN_SIZE.y - player.radius);
+        // TODO: Change this
+        left_paddle.player_pos = player.position;
+        right_paddle.player_pos = player.position;
 
         // Restart if player is outside of the screen
         if player.position.x > SCREEN_SIZE.x || player.position.x < 0.0 {
 
             // Reset variables
             player.position = SCREEN_SIZE / 2.0;
-            left_paddle.y =  SCREEN_SIZE.y / 2.0 - PADDLE_SIZE.y / 2.0;
-            right_paddle.y =  SCREEN_SIZE.y / 2.0 - PADDLE_SIZE.y / 2.0;
+            left_paddle.position.y =  SCREEN_SIZE.y / 2.0 - PADDLE_SIZE.y / 2.0;
+            right_paddle.position.y =  SCREEN_SIZE.y / 2.0 - PADDLE_SIZE.y / 2.0;
 
             player.input.dir = Vector2::zero();
             player.prone_dir = Vector2 { x: -1.0, y: 0.0 };
@@ -83,8 +95,8 @@ fn main() {
         }
 
         // Bounce when hit a paddle
-        let hit_left_paddle = left_paddle.check_collision_circle_rec(player.position, player.radius + 5.0);
-        let hit_right_paddle = right_paddle.check_collision_circle_rec(player.position, player.radius + 5.0);
+        let hit_left_paddle = left_paddle.hitbox.check_collision_circle_rec(player.position, player.radius + 5.0);
+        let hit_right_paddle = right_paddle.hitbox.check_collision_circle_rec(player.position, player.radius + 5.0);
         
         if hit_left_paddle || hit_right_paddle {
             let mut new_angle: f32 = thread_rng().gen();
@@ -94,8 +106,8 @@ fn main() {
             else { new_angle *= player.input.raw_dir.y.signum(); }
             
             // Keep player out of the paddles
-            let min = left_paddle.x + PADDLE_SIZE.x + player.radius;
-            let max = right_paddle.x - PADDLE_SIZE.x - player.radius;
+            let min = left_paddle.position.x + PADDLE_SIZE.x + player.radius;
+            let max = right_paddle.position.x - PADDLE_SIZE.x - player.radius;
             player.position = player.position.clamp(min, max);
 
             // Set new direction
@@ -119,33 +131,6 @@ fn main() {
             player.input.dir.x *= 0.5;
             player.input.dir.y = 0.0;
         }
-
-        // LEFT PADDLET
-        let mut paddlet_speed: f32 = 500.0;
-        let mut paddlet_view_range = 0.5;
-        
-        let player_distance = (1.0 - ((player.position.x + left_paddle.x) / (SCREEN_SIZE.x * paddlet_view_range))).powf(2.0);
-
-        let mut left_paddlet_target = (player.position.y - left_paddle.y) * player_distance * 80.0;
-        if left_paddlet_target.abs() < 20.0 { left_paddlet_target = 0.0 }
-        else { left_paddlet_target = left_paddlet_target.clamp(-paddlet_speed, paddlet_speed) }
-
-        if player.position.x - left_paddle.x > SCREEN_SIZE.x * paddlet_view_range { left_paddlet_target = 0.0 }
-
-        left_paddle.y += left_paddlet_target * rl.get_frame_time();
-
-
-        // RIGHT PADDLET
-        let player_distance = ((player.position.x - SCREEN_SIZE.x * paddlet_view_range) / (right_paddle.x - SCREEN_SIZE.x * paddlet_view_range)).powf(2.0);
-
-        let mut right_paddlet_target = (player.position.y - right_paddle.y) * player_distance * 80.0;
-        if right_paddlet_target.abs() < 10.0 { right_paddlet_target = 0.0 }
-        else { right_paddlet_target = right_paddlet_target.clamp(-paddlet_speed, paddlet_speed) }
-
-        if (right_paddle.x - player.position.x > SCREEN_SIZE.x * paddlet_view_range) { right_paddlet_target = 0.0 }
-
-        right_paddle.y += right_paddlet_target * rl.get_frame_time();
-
 
         // <-- DRAW SCREEN -->
         if rl.is_key_pressed(KEY_TAB) || rl.is_gamepad_button_pressed(0, GAMEPAD_BUTTON_MIDDLE_RIGHT) { show_stats = !show_stats; }
@@ -179,8 +164,8 @@ fn main() {
         draw_handle.draw_text(&text, text_x as i32, (SCREEN_SIZE.y * 0.01) as i32, 22, Color::RED);
         
         draw_handle.draw_circle_v(player.position, player.radius, player.color);
-        draw_handle.draw_rectangle_rec(&left_paddle, Color::GRAY);
-        draw_handle.draw_rectangle_rec(&right_paddle, Color::GRAY);
+        draw_handle.draw_rectangle_rec(&left_paddle.hitbox, Color::GRAY);
+        draw_handle.draw_rectangle_rec(&right_paddle.hitbox, Color::GRAY);
     }
     
 
