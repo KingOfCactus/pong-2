@@ -2,77 +2,33 @@ mod input_system;
 mod game_objects;
 mod utils;
 
-use crate::game_objects::*;
 use crate::utils::*;
+use crate::game_objects::*;
 
-use rand;
-use std::fs;
-use std::io::Write;
-use rand::Rng;
-use rand::thread_rng;
+use rand::*;
 use raylib::prelude::*;
-use raylib::prelude::Vector2;
-use raylib::consts::KeyboardKey::*;
-use raylib::consts::GamepadAxis::*;
-use raylib::consts::GamepadButton::*;
+use raylib::ffi::KeyboardKey::*;
+use raylib::ffi::GamepadAxis::*;
+use raylib::ffi::GamepadButton::*;
 
 fn main() {
-    let (mut rl, _thread) = raylib::init()
-        .size(SCREEN_SIZE.x as i32, SCREEN_SIZE.y as i32)
-        .title("Pong 2").vsync().build();
-    
-    rl.set_target_fps(60);
-
-    let mut show_stats = true;
-
-    let mut player = Ball::new (
-        Vector2 { x: SCREEN_SIZE.x * 0.9, y: SCREEN_SIZE.y * 0.5 },
-        Color { r: 255, g: 255, b: 255, a: 185},
-        10.0,
-        500.0,
-    );
-
-    player.input.smoothness = 3.0;
-    player.prone_dir = Vector2 { x: -1.0, y: 0.0}; 
-
-    let mut paddlet_speed: f32 = 500.0;
-    let mut paddlet_view_range = 0.5;
-
-    let mut left_paddle = Paddle::new(
-        Vector2 { 
-            x: PADDLE_PADDING, 
-            y: SCREEN_SIZE.y / 2.0 - PADDLE_SIZE.y / 2.0 },
-        Color::WHITE,
-        PADDLE_SIZE,
-        paddlet_speed,
-        paddlet_view_range
-    );
-
-    let mut right_paddle = Paddle::new(
-        Vector2 { 
-            x: SCREEN_SIZE.x - PADDLE_SIZE.x - PADDLE_PADDING, 
-            y: SCREEN_SIZE.y / 2.0 - PADDLE_SIZE.y / 2.0 },
-        Color::WHITE,
-        PADDLE_SIZE,
-        paddlet_speed,
-        paddlet_view_range
-    );
+    let (mut rl, thread) = init_window();
+    let (mut player, mut left_paddle, mut right_paddle) = start_game();
 
     let mut score = 0;
-    let mut highscore = get_highscore();
-
+    let mut show_stats = true;
+    let mut highscore = get_highscore(); 
 
     // Each frame
     while !rl.window_should_close() {
         // <-- GAME LOGIC -->
+        player.update(&rl);
 
-        player.update(&mut rl);
-        left_paddle.update(&mut rl);
-        right_paddle.update(&mut rl);
-
-        // TODO: Change this
         left_paddle.player_pos = player.position;
+        left_paddle.update(&rl);
+
         right_paddle.player_pos = player.position;
+        right_paddle.update(&rl);
 
         // Restart if player is outside of the screen
         if player.position.x > SCREEN_SIZE.x || player.position.x < 0.0 {
@@ -95,10 +51,10 @@ fn main() {
         }
 
         // Bounce when hit a paddle
-        let hit_left_paddle = left_paddle.hitbox.check_collision_circle_rec(player.position, player.radius + 5.0);
-        let hit_right_paddle = right_paddle.hitbox.check_collision_circle_rec(player.position, player.radius + 5.0);
+        let hit_paddle = left_paddle.hitbox.check_collision_circle_rec(player.position, player.radius + 5.0) ||
+                         right_paddle.hitbox.check_collision_circle_rec(player.position, player.radius + 5.0);
         
-        if hit_left_paddle || hit_right_paddle {
+        if hit_paddle {
             let mut new_angle: f32 = thread_rng().gen();
 
             // Copy player.input direction or keep previous direction 
@@ -150,7 +106,7 @@ fn main() {
             stats += &keys_down;
         }
 
-        let mut draw_handle = rl.begin_drawing(&_thread);
+        let mut draw_handle = rl.begin_drawing(&thread);
         draw_handle.clear_background(Color::BLACK);
 
         if show_stats {
@@ -166,32 +122,5 @@ fn main() {
         draw_handle.draw_circle_v(player.position, player.radius, player.color);
         draw_handle.draw_rectangle_rec(&left_paddle.hitbox, Color::GRAY);
         draw_handle.draw_rectangle_rec(&right_paddle.hitbox, Color::GRAY);
-    }
-    
-
-
-
-
-
-
-    fn get_highscore() -> i32 {
-        match fs::read_to_string("highscore.txt") {
-            Ok(s) => return s.parse::<i32>().unwrap(),
-
-            // Create file if doesn't exist
-            _ => { 
-                println!("File 'highscore.txt' doesn't exist, creating...");
-                let mut file = fs::File::create("highscore.txt").unwrap();
-                file.write_all(b"0").unwrap();
-                return 0;
-             }
-        }
-    }
-
-    fn save_highscore(i: i32) {
-        let mut file = fs::OpenOptions::new().write(true).open("highscore.txt").unwrap();
-        let mut buffer: String = i.to_string();
-
-        file.write_all(buffer.as_bytes()).unwrap();
     }
 }

@@ -4,8 +4,8 @@ use raylib::prelude::*;
 
 // Common trait for GameObjects
 pub trait GameObject {
-    fn update(&mut self, rl: &mut RaylibHandle);
-    fn draw(&mut self);
+    fn update(&mut self, rl: &RaylibHandle);
+    fn draw(&mut self, rl: &RaylibHandle);
 }
 
 
@@ -23,12 +23,12 @@ pub struct Paddle {
 }
 
 impl GameObject for Paddle {
-    fn update(&mut self, rl: &mut RaylibHandle) {
+    fn update(&mut self, rl: &RaylibHandle) {
         self.update_velocity();
         self.translate(rl);
     }
 
-    fn draw(&mut self) {
+    fn draw(&mut self, rl: &RaylibHandle) {
         return;
     }
 }
@@ -46,13 +46,13 @@ pub struct Ball {
 }
 
 impl GameObject for Ball{
-    fn update(&mut self, rl: &mut RaylibHandle) {
+    fn update(&mut self, rl: &RaylibHandle) {
         self.update_velocity(rl);
         self.update_color(rl);
         self.translate(rl);
     }
 
-    fn draw(&mut self) {
+    fn draw(&mut self, rl: &RaylibHandle) {
         return;
     }
 }
@@ -60,22 +60,20 @@ impl GameObject for Ball{
 
 impl Paddle {
     pub fn new( position: Vector2, color: Color,
-                size: Vector2, speed : f32, view_range: f32) -> Self {
-            Paddle { 
+                size: Vector2, speed : f32, view_range: f32) -> Paddle {
+            return Paddle { 
                 view_range,
                 position,
                 speed,
                 color, 
                 size,
-
+                
                 velocity: 0.0,
-                player_pos: Vector2::zero(),
                 hitbox: Rectangle::new(
-                    position.x, 
-                    position.y, 
-                    size.x, 
-                    size.y
-                )
+                    position.x, position.y, 
+                    size.x, size.y
+                ),
+                player_pos: Vector2::zero(),
             }
     }
 
@@ -112,16 +110,16 @@ impl Paddle {
 impl Ball {
     pub fn new( position: Vector2, color: Color, 
                 radius: f32, speed : f32) -> Self {
-            Ball { 
-                position, radius, speed, color,
+            Ball {
                 input : InputData::new(), 
-                velocity: Vector2::zero(),
-                prone_dir: Vector2::zero(), 
+                velocity: Vector2::zero(), 
+                position, radius, speed, color,
+                prone_dir: Vector2 { x: -1.0, y: 0.0},
             }
     }
 
     // Fluctuates between grey and white
-    fn update_color(&mut self, rl: &mut RaylibHandle) {
+    fn update_color(&mut self, rl: &RaylibHandle) {
         let mut alpha = self.color.a as f32;
         let input_intensity = (self.input.dir.x.abs() + self.input.dir.y.abs()) / 2.0;
 
@@ -138,13 +136,13 @@ impl Ball {
     }
 
     // Rust compiler don't let me name it move() >:(
-    fn translate(&mut self, rl: &mut RaylibHandle)
+    fn translate(&mut self, rl: &RaylibHandle)
     {
         self.position += self.velocity * rl.get_frame_time();
         self.position.y = self.position.y.clamp(self.radius, SCREEN_SIZE.y - self.radius); // keep it inside the screen
     }
 
-    fn update_velocity(&mut self, rl: &mut RaylibHandle) {
+    fn update_velocity(&mut self, rl: &RaylibHandle) {
         // get newest input data
         InputData::update_data(&mut self.input, rl);
         let desired_dir = self.input.dir * Vector2 { x: 1.0 / 2.25, y: 1.0 / 1.70 }; // TODO: Remove hardcoded vector2 multiplier

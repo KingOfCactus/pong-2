@@ -23,7 +23,7 @@ impl InputData {
         return Self {
             on_gamepad: false,
 
-            smoothness: 0.0,
+            smoothness: 3.0,
             raw_dir: Vector2::zero(),
             dir: Vector2::zero(),
 
