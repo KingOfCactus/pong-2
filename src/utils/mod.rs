@@ -74,40 +74,41 @@ pub fn init_gobjects() -> (Ball, Paddle, Paddle) {
 }
 
 
-pub fn get_stats(player: &Ball) -> String {
-    let mut stats;
+pub fn get_debug_info(player: &Ball) -> String {
+    let input = &player.input;
+    let mut stats = format!("- Prone: ({:.2}, {:.2}) \n- Move: ({:.2}, {:.2}\n", 
+                    player.prone_dir.x, player.prone_dir.y, 
+                    input.dir.x, input.dir.y);
 
-    stats = "(".to_owned() + format!("{:.2}", player.prone_dir.x).as_str() + ", " + format!("{:.2}", player.prone_dir.y).as_str() + ")\n";
-    stats = stats + "(" + format!("{:.2}", player.input.dir.x).as_str() + ", " + format!("{:.2}", player.input.dir.y).as_str() + ")\n";
-    
     if player.input.on_gamepad {
-        stats = stats + &player.input.gamepad_name;
-        stats = stats + "(" + format!("{:.2}", player.input.raw_dir.x).as_str() + ", " + format!("{:.2}", player.input.raw_dir.y).as_str() + ")\n";
+        stats += &format!(" {} \n ({:.2}, {:.2})", input.gamepad_name, 
+                 input.raw_dir.x, input.raw_dir.y);
     }
     
     return stats;
 }
 
-pub fn drawn_screen (
-    show_stats: &bool, rl: &mut RaylibHandle, thread: &RaylibThread, 
-    player: &Ball, left_paddle: &Paddle, right_paddle: &Paddle,
-    highscore: &i32, score: &i32 ) {
-        let mut draw_handle = rl.begin_drawing(thread);
-        draw_handle.clear_background(Color::BLACK);
+pub fn drawn_screen (debug: &bool, rl: &mut RaylibHandle, thread: &RaylibThread, 
+                     player: &Ball, left_paddle: &Paddle, right_paddle: &Paddle,
+                     highscore: &i32, score: &i32) {
+    // Clear screen
+    let mut draw_handle = rl.begin_drawing(thread);
+    draw_handle.clear_background(Color::BLACK);
 
-        if *show_stats {
-            let stats = get_stats(&player);
-            draw_handle.draw_fps(0, 0);
-            draw_handle.draw_text(&stats, 0, (SCREEN_SIZE.y * 0.05) as i32, 18, Color::GREEN);
-        }
+    // Draw score text
+    let text = format!("Hiscore: {}\n Score: {}", highscore, score);
+    let centralized_x = SCREEN_SIZE.x / 2.0 - (measure_text(&text, 22) as f32 / 2.0);
+    draw_handle.draw_text(&text, centralized_x as i32, (SCREEN_SIZE.y * 0.01) as i32, 22, Color::RED);
+    
+    // Draw game objects
+    draw_handle.draw_circle_v(player.position, player.radius, player.color);
+    draw_handle.draw_rectangle_rec(&left_paddle.hitbox, Color::GRAY);
+    draw_handle.draw_rectangle_rec(&right_paddle.hitbox, Color::GRAY);
 
-        // Draw score text
-        let text = "Hiscore: ".to_owned() + &highscore.to_string() + "\nScore: " + &score.to_string();
-        let text_x = SCREEN_SIZE.x / 2.0 - (measure_text(&text, 22) as f32 / 2.0);
-        draw_handle.draw_text(&text, text_x as i32, (SCREEN_SIZE.y * 0.01) as i32, 22, Color::RED);
-        
-        // Draw game objects
-        draw_handle.draw_circle_v(player.position, player.radius, player.color);
-        draw_handle.draw_rectangle_rec(&left_paddle.hitbox, Color::GRAY);
-        draw_handle.draw_rectangle_rec(&right_paddle.hitbox, Color::GRAY);
+    // Draw debug info
+    if *debug {
+        let stats = get_debug_info(&player);
+        draw_handle.draw_fps(0, 0);
+        draw_handle.draw_text(&stats, 0, (SCREEN_SIZE.y * 0.05) as i32, 18, Color::GREEN);
+    }
 }
