@@ -5,7 +5,6 @@ use raylib::prelude::*;
 // Common trait for GameObjects
 pub trait GameObject {
     fn update(&mut self, rl: &RaylibHandle);
-    fn draw(&mut self, rl: &RaylibHandle);
 }
 
 
@@ -27,10 +26,6 @@ impl GameObject for Paddle {
         self.update_velocity();
         self.translate(rl);
     }
-
-    fn draw(&mut self, rl: &RaylibHandle) {
-        return;
-    }
 }
 
 pub struct Ball {
@@ -50,10 +45,6 @@ impl GameObject for Ball{
         self.update_velocity(rl);
         self.update_color(rl);
         self.translate(rl);
-    }
-
-    fn draw(&mut self, rl: &RaylibHandle) {
-        return;
     }
 }
 
