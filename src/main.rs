@@ -15,5 +15,4 @@ fn main() {
         active_state.update(&rl);
         active_state.draw(&mut rl, &thread);
     }
-
 }
