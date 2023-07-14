@@ -1,7 +1,10 @@
+mod main_menu;
 mod game_loop;
 
 use raylib::prelude::*;
 use crate::game_objects::*;
+
+use self::main_menu::*;
 
 pub trait GameState {
     fn update(&mut self, rl: &RaylibHandle);
@@ -16,4 +19,11 @@ pub struct GameLoop {
     player: Ball,
     left_paddle: Paddle,
     right_paddle: Paddle
+}
+
+pub struct MainMenu {
+    title: Text,
+    play: Button,
+    config: Button,
+    quit: Button
 }

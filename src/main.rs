@@ -8,7 +8,7 @@ use utils::*;
 
 fn main() {
     let (mut rl, thread) = init_window();
-    let mut active_state = GameLoop::new();
+    let mut active_state = MainMenu::new();
 
     // Each frame
     while !rl.window_should_close() {
