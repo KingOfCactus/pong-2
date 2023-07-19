@@ -7,6 +7,14 @@ use crate::game_states::*;
 use crate::game_objects::*;
 
 impl GameState for GameLoop {
+    fn is_active(&self) -> bool {
+        return self.is_active;
+    }
+
+    fn get_next_state(&self) -> Box<dyn GameState> {
+        return Box::new(MainMenu::new());
+    }
+    
     fn update(&mut self, rl: &RaylibHandle){
         // Toggle debug mode
         if rl.is_key_pressed(KEY_TAB) { 
@@ -52,8 +60,10 @@ impl GameState for GameLoop {
 impl GameLoop {
     pub fn new() -> GameLoop {
         return GameLoop {
+            is_active: true,
+
             score: 0, 
-            debug_mode: true,  
+            debug_mode: false,  
             hiscore: get_highscore(), 
 
             player: Ball::new(
@@ -81,7 +91,7 @@ impl GameLoop {
                 Color::WHITE, PADDLE_SIZE, 
                 INITIAL_PADDLE_SPEED,
                 INITIAL_PADDLE_RANGE
-            ) 
+            ),
         }
     }
 
@@ -117,7 +127,6 @@ impl GameLoop {
                 self.hiscore = self.score;
             }
             else { self.score = 0 }
-
         }
 
         // Bounce when hit a paddle

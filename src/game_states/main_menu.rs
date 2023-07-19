@@ -18,6 +18,14 @@ pub struct Button {
 }
 
 impl GameState for MainMenu {
+    fn is_active(&self) -> bool {
+        return self.is_active;
+    }
+
+    fn get_next_state(&self) -> Box<dyn GameState> {
+        return Box::new(GameLoop::new());
+    }
+
     fn update(&mut self, rl: &RaylibHandle) {
         let mouse_pos = rl.get_mouse_position();
 
@@ -31,7 +39,7 @@ impl GameState for MainMenu {
             return;
         }
 
-        if self.play.focused {  }
+        if self.play.focused { self.on_click_play() }
         if self.config.focused { println!("Config") }
         if self.quit.focused { println!("Quit") }
     }
@@ -61,8 +69,14 @@ impl GameState for MainMenu {
 }
 
 impl MainMenu {
+    fn on_click_play(self: &mut Self) {
+        self.is_active = false;
+    }
+
     pub fn new() -> MainMenu {
         return MainMenu {
+            is_active: true,
+
             title: Text {
                 color: Color::GOLD,
                 text: "Pong 2 - The Enemy is Now Another".to_string(),
@@ -112,7 +126,7 @@ impl MainMenu {
                     SCREEN_SIZE.x / 2.0 as f32 - (measure_text("Quit", 20) + 30) as f32 / 2.0, 
                     SCREEN_SIZE.y * 0.6 - 10.0, measure_text("Quit", 20) as f32 + 30.0, 40.0
                 )
-            }
+            },
         }                
     }
 }
