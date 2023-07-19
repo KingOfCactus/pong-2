@@ -4,6 +4,13 @@ mod paddle;
 use raylib::prelude::*;
 use crate::input_system::*;
 
+pub const PADDLE_PADDING: f32 = 20.0;
+pub const MAX_PLAYER_SPEED: f32 = 500.0;
+pub const INITIAL_PADDLE_RANGE: f32 = 0.5;
+pub const INITIAL_PADDLE_SPEED: f32 = 500.0;
+
+pub const PADDLE_SIZE: Vector2 = Vector2 { x: 11.0, y: 65.0 };
+
 // Common trait for GameObjects
 pub trait GameObject {
     fn update(&mut self, rl: &RaylibHandle);

@@ -6,12 +6,6 @@ use crate::utils::*;
 use crate::game_states::*;
 use crate::game_objects::*;
 
-const PADDLE_PADDING: f32 = 20.0;
-const INITIAL_PADDLE_RANGE: f32 = 0.5;
-const INITIAL_PADDLE_SPEED: f32 = 500.0;
-
-const PADDLE_SIZE: Vector2 = Vector2 { x: 11.0, y: 65.0 };
-
 impl GameState for GameLoop {
     fn is_active(&self) -> bool {
         return self.is_active;
@@ -77,7 +71,7 @@ impl GameLoop {
                 Vector2 { x: SCREEN_SIZE.x * 0.9, y: SCREEN_SIZE.y * 0.5 },
                 Color { r: 255, g: 255, b: 255, a: 185},
                 10.0,
-                500.0,
+                MAX_PLAYER_SPEED * 0.63,
             ),
 
             left_paddle: Paddle::new(
@@ -106,6 +100,7 @@ impl GameLoop {
         match self.score {
             0 => {
                 self.score_color = Color::DARKGREEN;
+                self.player.speed = MAX_PLAYER_SPEED * 0.63;
 
                 self.left_paddle.speed = INITIAL_PADDLE_SPEED;
                 self.right_paddle.speed = INITIAL_PADDLE_SPEED;
@@ -114,15 +109,17 @@ impl GameLoop {
 
             },
 
-            15 => {
+            10 => {
                 self.score_color = Color::GREEN;
+                self.player.speed = MAX_PLAYER_SPEED * 0.75;
 
                 self.left_paddle.speed = INITIAL_PADDLE_SPEED * 0.85;
                 self.right_paddle.speed = INITIAL_PADDLE_SPEED * 0.85;
             },
 
-            30 => {
+            25 => {
                 self.score_color = Color::YELLOW;
+                self.player.speed = MAX_PLAYER_SPEED * 0.85;
 
                 self.left_paddle.speed = INITIAL_PADDLE_SPEED * 0.74;
                 self.right_paddle.speed = INITIAL_PADDLE_SPEED * 0.74;
@@ -133,6 +130,7 @@ impl GameLoop {
 
             50 => {
                 self.score_color = Color::GOLD;
+                self.player.speed = MAX_PLAYER_SPEED * 0.95;
 
                 self.left_paddle.speed = INITIAL_PADDLE_SPEED * 0.7;
                 self.right_paddle.speed = INITIAL_PADDLE_SPEED * 0.7;
@@ -142,7 +140,7 @@ impl GameLoop {
 
             75 => {
                 self.score_color = Color::RED;
-
+                self.player.speed = MAX_PLAYER_SPEED;
                 self.left_paddle.speed = INITIAL_PADDLE_SPEED * 0.55;
                 self.right_paddle.speed = INITIAL_PADDLE_SPEED * 0.55;
                 self.left_paddle.view_range = INITIAL_PADDLE_RANGE * 0.7;
@@ -202,7 +200,7 @@ impl GameLoop {
             else { new_angle *= self.player.input.raw_dir.y.signum(); }
             
             // Randomly invert new angle direction
-            if self.score > 30 && thread_rng().gen_range(0.0..1.0) > 0.65 { new_angle *= -1.0; }
+            if self.score > 25 && thread_rng().gen_range(0.0..1.0) > 0.65 { new_angle *= -1.0; }
 
             // Keep player out of the paddles
             let min = self.left_paddle.position.x + PADDLE_SIZE.x + self.player.radius;

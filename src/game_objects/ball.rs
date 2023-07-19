@@ -29,14 +29,14 @@ impl Ball {
 
         // go closer to white if receiving input
         if self.input.raw_dir != Vector2::zero() { 
-            alpha += 680.0 * input_intensity * rl.get_frame_time(); // TODO: Use logarithmic interpolation instead of a linear one
+            alpha += 680.0 * input_intensity * 10.0 * rl.get_frame_time(); // TODO: Use logarithmic interpolation instead of a linear one
         }
         // go closer to grey if not
         else { 
             alpha -= 500.0 * (1.0 - input_intensity).powf(2.0) * rl.get_frame_time(); 
         }
 
-        self.color.a = alpha.clamp(185.0, 255.0) as u8;
+        self.color.a = alpha.clamp(160.0, 255.0) as u8;
     }
 
     // Rust compiler don't let me name it move() >:(
@@ -49,7 +49,7 @@ impl Ball {
     fn update_velocity(&mut self, rl: &RaylibHandle) {
         // get newest input data
         InputData::update_data(&mut self.input, rl);
-        let desired_dir = self.input.dir * Vector2 { x: 1.0 / 2.25, y: 1.0 / 1.70 }; // TODO: Remove hardcoded vector2 multiplier
+        let desired_dir = self.input.dir * Vector2 { x: 1.0 / 2.0, y: 1.0 / 1.50}; // TODO: Remove hardcoded vector2 multiplier
         self.velocity = (self.prone_dir + desired_dir) * self.speed;
     }
 }
