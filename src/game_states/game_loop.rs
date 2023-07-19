@@ -126,7 +126,8 @@ impl GameLoop {
                 save_highscore(self.score);
                 self.hiscore = self.score;
             }
-            else { self.score = 0 }
+            
+            self.score = 0; 
         }
 
         // Bounce when hit a paddle
