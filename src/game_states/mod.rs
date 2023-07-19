@@ -17,13 +17,14 @@ pub trait GameState {
 pub struct GameLoop {
     score: i32,
     hiscore: i32,
-    debug_mode: bool,
+    score_color: Color,
 
     player: Ball,
     left_paddle: Paddle,
     right_paddle: Paddle,
-
-    is_active: bool
+    
+    is_active: bool,
+    debug_mode: bool
 }
 
 pub struct MainMenu {

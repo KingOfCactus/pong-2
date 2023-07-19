@@ -6,6 +6,12 @@ use crate::utils::*;
 use crate::game_states::*;
 use crate::game_objects::*;
 
+const PADDLE_PADDING: f32 = 20.0;
+const INITIAL_PADDLE_RANGE: f32 = 0.5;
+const INITIAL_PADDLE_SPEED: f32 = 500.0;
+
+const PADDLE_SIZE: Vector2 = Vector2 { x: 11.0, y: 65.0 };
+
 impl GameState for GameLoop {
     fn is_active(&self) -> bool {
         return self.is_active;
@@ -41,7 +47,7 @@ impl GameState for GameLoop {
         // Draw score text
         let text = format!("Hiscore: {}\n Score: {}", self.hiscore, self.score);
         let centralized_x = SCREEN_SIZE.x / 2.0 - (measure_text(&text, 22) as f32 / 2.0);
-        draw_handle.draw_text(&text, centralized_x as i32, (SCREEN_SIZE.y * 0.01) as i32, 22, Color::RED);
+        draw_handle.draw_text(&text, centralized_x as i32, (SCREEN_SIZE.y * 0.01) as i32, 22, self.score_color);
         
         // Draw game objects
         draw_handle.draw_circle_v(self.player.position, self.player.radius, self.player.color);
@@ -61,11 +67,12 @@ impl GameLoop {
     pub fn new() -> GameLoop {
         return GameLoop {
             is_active: true,
+            debug_mode: false,
 
             score: 0, 
-            debug_mode: false,  
             hiscore: get_highscore(), 
-
+            score_color: Color::DARKGREEN,
+            
             player: Ball::new(
                 Vector2 { x: SCREEN_SIZE.x * 0.9, y: SCREEN_SIZE.y * 0.5 },
                 Color { r: 255, g: 255, b: 255, a: 185},
@@ -92,6 +99,57 @@ impl GameLoop {
                 INITIAL_PADDLE_SPEED,
                 INITIAL_PADDLE_RANGE
             ),
+        }
+    }
+
+    fn update_difficulty(self: &mut Self) {
+        match self.score {
+            0 => {
+                self.score_color = Color::DARKGREEN;
+
+                self.left_paddle.speed = INITIAL_PADDLE_SPEED;
+                self.right_paddle.speed = INITIAL_PADDLE_SPEED;
+                self.left_paddle.view_range = INITIAL_PADDLE_RANGE;
+                self.right_paddle.view_range = INITIAL_PADDLE_RANGE;
+
+            },
+
+            15 => {
+                self.score_color = Color::GREEN;
+
+                self.left_paddle.speed = INITIAL_PADDLE_SPEED * 0.85;
+                self.right_paddle.speed = INITIAL_PADDLE_SPEED * 0.85;
+            },
+
+            30 => {
+                self.score_color = Color::YELLOW;
+
+                self.left_paddle.speed = INITIAL_PADDLE_SPEED * 0.74;
+                self.right_paddle.speed = INITIAL_PADDLE_SPEED * 0.74;
+                self.left_paddle.view_range = INITIAL_PADDLE_RANGE * 0.9;
+                self.right_paddle.view_range = INITIAL_PADDLE_RANGE * 0.9;
+
+            },
+
+            50 => {
+                self.score_color = Color::GOLD;
+
+                self.left_paddle.speed = INITIAL_PADDLE_SPEED * 0.7;
+                self.right_paddle.speed = INITIAL_PADDLE_SPEED * 0.7;
+                self.left_paddle.view_range = INITIAL_PADDLE_RANGE * 0.75;
+                self.right_paddle.view_range = INITIAL_PADDLE_RANGE * 0.75;
+            }
+
+            75 => {
+                self.score_color = Color::RED;
+
+                self.left_paddle.speed = INITIAL_PADDLE_SPEED * 0.55;
+                self.right_paddle.speed = INITIAL_PADDLE_SPEED * 0.55;
+                self.left_paddle.view_range = INITIAL_PADDLE_RANGE * 0.7;
+                self.right_paddle.view_range = INITIAL_PADDLE_RANGE * 0.7;
+            }
+
+            _=> {},
         }
     }
 
@@ -128,6 +186,7 @@ impl GameLoop {
             }
             
             self.score = 0; 
+            self.update_difficulty();
         }
 
         // Bounce when hit a paddle
@@ -136,11 +195,15 @@ impl GameLoop {
         
         if hit_paddle {
             let mut new_angle: f32 = thread_rng().gen();
+            new_angle = new_angle.clamp(0.65, 1.0);
 
             // Copy player.input direction or keep previous direction 
             if self.player.input.raw_dir.y == 0.0 { new_angle *= self.player.prone_dir.y.signum(); }
             else { new_angle *= self.player.input.raw_dir.y.signum(); }
             
+            // Randomly invert new angle direction
+            if self.score > 30 && thread_rng().gen_range(0.0..1.0) > 0.65 { new_angle *= -1.0; }
+
             // Keep player out of the paddles
             let min = self.left_paddle.position.x + PADDLE_SIZE.x + self.player.radius;
             let max = self.right_paddle.position.x - PADDLE_SIZE.x - self.player.radius;
@@ -152,6 +215,7 @@ impl GameLoop {
             self.player.input.dir = Vector2 { x: 0.0, y: 0.0 };
           
             self.score += 1;
+            self.update_difficulty();
         }
 
         // Bounce when hit top or bottom screen
