@@ -192,15 +192,14 @@ impl GameLoop {
                          self.right_paddle.hitbox.check_collision_circle_rec(self.player.position, self.player.radius + 5.0);
         
         if hit_paddle {
-            let mut new_angle: f32 = thread_rng().gen();
-            new_angle = new_angle.clamp(0.65, 1.0);
+            let mut new_angle: f32 = thread_rng().gen_range(0.65..1.0);
 
             // Copy player.input direction or keep previous direction 
             if self.player.input.raw_dir.y == 0.0 { new_angle *= self.player.prone_dir.y.signum(); }
             else { new_angle *= self.player.input.raw_dir.y.signum(); }
             
             // Randomly invert new angle direction
-            if self.score > 25 && thread_rng().gen_range(0.0..1.0) > 0.65 { new_angle *= -1.0; }
+            if self.score >= 100 && thread_rng().gen_range(0.0..1.0) > 0.65 { new_angle *= -1.0; }
 
             // Keep player out of the paddles
             let min = self.left_paddle.position.x + PADDLE_SIZE.x + self.player.radius;
