@@ -29,9 +29,9 @@ pub struct GameLoop {
 
 pub struct MainMenu {
     title: Text,
-    play: Button,
-    config: Button,
+    singleplayer: Button,
     quit: Button,
-
+    hiscore: Text,
+    
     is_active: bool
 }
