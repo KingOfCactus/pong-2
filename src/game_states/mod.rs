@@ -15,6 +15,9 @@ pub trait GameState {
 }
 
 pub struct GameLoop {
+    lives: i32,
+    checkpoint: i32,
+    
     score: i32,
     hiscore: i32,
     score_color: Color,

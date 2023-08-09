@@ -63,6 +63,9 @@ impl GameLoop {
             is_active: true,
             debug_mode: false,
 
+            lives: 3,
+            checkpoint: 0,
+
             score: 0, 
             hiscore: get_highscore(), 
             score_color: Color::DARKGREEN,
@@ -183,7 +186,14 @@ impl GameLoop {
                 self.hiscore = self.score;
             }
             
-            self.score = 0; 
+            // Reset checkpoint if lose all lives 
+            if self.lives <= 1 { 
+                self.lives = 3;
+                self.score = 0;
+            }
+            else { self.lives -= 1; }
+
+            self.checkpoint = self.score;
             self.update_difficulty();
         }
 
