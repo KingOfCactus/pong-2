@@ -102,6 +102,7 @@ impl GameLoop {
     fn update_difficulty(self: &mut Self) {
         match self.score {
             0 => {
+                self.checkpoint = 0;
                 self.score_color = Color::DARKGREEN;
                 self.player.speed = MAX_PLAYER_SPEED * 0.63;
 
@@ -113,6 +114,7 @@ impl GameLoop {
             },
 
             10 => {
+                self.checkpoint = 10;
                 self.score_color = Color::GREEN;
                 self.player.speed = MAX_PLAYER_SPEED * 0.75;
 
@@ -121,6 +123,7 @@ impl GameLoop {
             },
 
             25 => {
+                self.checkpoint = 25;
                 self.score_color = Color::YELLOW;
                 self.player.speed = MAX_PLAYER_SPEED * 0.85;
 
@@ -132,6 +135,7 @@ impl GameLoop {
             },
 
             50 => {
+                self.checkpoint = 50;
                 self.score_color = Color::GOLD;
                 self.player.speed = MAX_PLAYER_SPEED * 0.95;
 
@@ -142,6 +146,7 @@ impl GameLoop {
             }
 
             75 => {
+                self.checkpoint = 75;
                 self.score_color = Color::RED;
                 self.player.speed = MAX_PLAYER_SPEED;
                 self.left_paddle.speed = INITIAL_PADDLE_SPEED * 0.55;
@@ -189,11 +194,13 @@ impl GameLoop {
             // Reset checkpoint if lose all lives 
             if self.lives <= 1 { 
                 self.lives = 3;
-                self.score = 0;
+                self.checkpoint = 0;
             }
-            else { self.lives -= 1; }
+            else { 
+                self.lives -= 1; 
+            }
 
-            self.checkpoint = self.score;
+            self.score = self.checkpoint;
             self.update_difficulty();
         }
 
