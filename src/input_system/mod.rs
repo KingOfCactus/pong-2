@@ -3,7 +3,7 @@ use raylib::consts::KeyboardKey::*;
 use raylib::consts::GamepadAxis::*;
 use raylib::consts::GamepadButton::*;
 
-const GAMEPAD_DEADZONE: f32 = 0.7;
+const GAMEPAD_DEADZONE: f32 = 0.20;
 
 pub struct InputData {
     pub on_gamepad: bool,
@@ -39,11 +39,15 @@ impl InputData {
     pub fn update_data(input: &mut Self, rl: &RaylibHandle) {
         // Update gamepad data
         input.on_gamepad = rl.is_gamepad_available(0);
-        let gamepad_axis = Vector2 {
+        let mut gamepad_axis = Vector2 {
             x: rl.get_gamepad_axis_movement(0, GAMEPAD_AXIS_LEFT_X),
             y: rl.get_gamepad_axis_movement(0, GAMEPAD_AXIS_LEFT_Y)
         };
-    
+
+        // Ignore axis movements in the deadzone
+        if gamepad_axis.x.abs() < GAMEPAD_DEADZONE { gamepad_axis.x = 0.0; } 
+        if gamepad_axis.y.abs() < GAMEPAD_DEADZONE { gamepad_axis.y = 0.0; }
+
         if input.on_gamepad { input.gamepad_name = rl.get_gamepad_name(0).expect("UNKNOWN"); }
         
         // Update buttons data
