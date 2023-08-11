@@ -20,6 +20,7 @@ pub trait GameObject {
 pub struct Ball {
     pub position: Vector2,
     pub velocity: Vector2,
+    pub colors: [Color; 3],
     pub color: Color,
 
     pub radius: f32,

@@ -12,13 +12,14 @@ impl GameObject for Ball{
 }
 
 impl Ball {
-    pub fn new( position: Vector2, color: Color, 
+    pub fn new( position: Vector2, colors: [Color; 3], 
                 radius: f32, speed : f32) -> Self {
             Ball {
                 lives: 3,
+                color: colors[2],
                 input : InputData::new(), 
                 velocity: Vector2::zero(), 
-                position, radius, speed, color,
+                position, radius, speed, colors,
                 prone_dir: Vector2 { x: -1.0, y: 0.0},
             }
     }
@@ -36,15 +37,9 @@ impl Ball {
         else { 
             alpha -= 500.0 * (1.0 - input_intensity).powf(2.0) * rl.get_frame_time(); 
         }
-        match self.lives {
-            3 => self.color.a = alpha.clamp(180.0, 255.0) as u8,
-            2 => self.color.a = alpha.clamp(165.0, 220.0) as u8,
-            _ => self.color.a = alpha.clamp(150.0, 200.0) as u8
-        }
-
-        self.color.b = 255 - ((3 - self.lives) * 50) as u8;
-        self.color.g = 150 - ((3 - self.lives) * 50) as u8;
-       
+        
+        self.color = self.colors[self.lives as usize - 1];
+        self.color.a = alpha.clamp(self.color.a as f32, 255.0) as u8;
     }
 
     // Rust compiler don't let me name it move() >:(

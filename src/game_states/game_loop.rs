@@ -70,7 +70,11 @@ impl GameLoop {
             
             player: Ball::new(
                 Vector2 { x: SCREEN_SIZE.x * 0.9, y: SCREEN_SIZE.y * 0.5 },
-                Color { r: 0, g: 150, b: 255, a: 150},
+                [
+                    Color::new(188, 212, 230, 150), // 1 live - #BCD4E6
+                    Color::new(137, 207, 240, 150), // 2 lives - #89CFF0
+                    Color::new(10, 255, 255, 150)   // 3 lives - #6CB4EE
+                ],
                 10.0,
                 MAX_PLAYER_SPEED * 0.63,
             ),
