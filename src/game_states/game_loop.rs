@@ -63,16 +63,14 @@ impl GameLoop {
             is_active: true,
             debug_mode: false,
 
-            lives: 3,
+            score: 0,
             checkpoint: 0,
-
-            score: 0, 
             hiscore: get_highscore(), 
             score_color: Color::DARKGREEN,
             
             player: Ball::new(
                 Vector2 { x: SCREEN_SIZE.x * 0.9, y: SCREEN_SIZE.y * 0.5 },
-                Color { r: 255, g: 255, b: 255, a: 185},
+                Color { r: 0, g: 150, b: 255, a: 150},
                 10.0,
                 MAX_PLAYER_SPEED * 0.63,
             ),
@@ -192,12 +190,12 @@ impl GameLoop {
             }
             
             // Reset checkpoint if lose all lives 
-            if self.lives <= 1 { 
-                self.lives = 3;
+            if self.player.lives <= 1 { 
+                self.player.lives = 3;
                 self.checkpoint = 0;
             }
             else { 
-                self.lives -= 1; 
+                self.player.lives -= 1; 
             }
 
             self.score = self.checkpoint;

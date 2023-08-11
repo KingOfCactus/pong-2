@@ -24,6 +24,7 @@ pub struct Ball {
 
     pub radius: f32,
     pub speed: f32,
+    pub lives: i32,
 
     pub input : InputData,
     pub prone_dir : Vector2,

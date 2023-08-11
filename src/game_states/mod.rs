@@ -14,14 +14,12 @@ pub trait GameState {
     fn draw(&mut self, rl: &mut RaylibHandle, thread: &RaylibThread); // Needs to be the last called method, since it drops the RaylibHandle
 }
 
-pub struct GameLoop {
-    lives: i32,
-    checkpoint: i32,
-    
+pub struct GameLoop {    
     score: i32,
     hiscore: i32,
+    checkpoint: i32,
     score_color: Color,
-
+    
     player: Ball,
     left_paddle: Paddle,
     right_paddle: Paddle,
