@@ -69,14 +69,11 @@ impl GameLoop {
             score_color: Color::DARKGREEN,
             
             player: Ball::new(
-                Vector2 { x: SCREEN_SIZE.x * 0.9, y: SCREEN_SIZE.y * 0.5 },
-                [
+                Vector2::new(SCREEN_SIZE.x * 0.9, SCREEN_SIZE.y * 0.5), [
                     Color::new(188, 212, 230, 150), // 1 live - #BCD4E6
                     Color::new(137, 207, 240, 150), // 2 lives - #89CFF0
                     Color::new(10, 255, 255, 150)   // 3 lives - #6CB4EE
-                ],
-                10.0,
-                MAX_PLAYER_SPEED * 0.63,
+                ], 10.8, MAX_PLAYER_SPEED * 0.63,
             ),
 
             left_paddle: Paddle::new(
@@ -112,7 +109,6 @@ impl GameLoop {
                 self.right_paddle.speed = INITIAL_PADDLE_SPEED;
                 self.left_paddle.view_range = INITIAL_PADDLE_RANGE;
                 self.right_paddle.view_range = INITIAL_PADDLE_RANGE;
-
             },
 
             10 => {
@@ -133,7 +129,6 @@ impl GameLoop {
                 self.right_paddle.speed = INITIAL_PADDLE_SPEED * 0.74;
                 self.left_paddle.view_range = INITIAL_PADDLE_RANGE * 0.9;
                 self.right_paddle.view_range = INITIAL_PADDLE_RANGE * 0.9;
-
             },
 
             50 => {
@@ -155,8 +150,7 @@ impl GameLoop {
                 self.right_paddle.speed = INITIAL_PADDLE_SPEED * 0.55;
                 self.left_paddle.view_range = INITIAL_PADDLE_RANGE * 0.7;
                 self.right_paddle.view_range = INITIAL_PADDLE_RANGE * 0.7;
-            }
-
+            } 
             _=> {},
         }
     }
@@ -194,12 +188,14 @@ impl GameLoop {
             }
             
             // Reset checkpoint if lose all lives 
-            if self.player.lives <= 1 { 
+            if self.player.lives <= 1 {
+                self.player.radius += 1.6; 
                 self.player.lives = 3;
                 self.checkpoint = 0;
             }
             else { 
                 self.player.lives -= 1; 
+                self.player.radius -= 0.8;
             }
 
             self.score = self.checkpoint;
