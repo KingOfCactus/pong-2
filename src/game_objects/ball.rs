@@ -16,6 +16,7 @@ impl Ball {
                 radius: f32, speed : f32) -> Self {
             Ball {
                 lives: 3,
+                is_active: true,
                 color: colors[2],
                 input : InputData::new(), 
                 velocity: Vector2::zero(), 

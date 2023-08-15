@@ -7,18 +7,17 @@ use crate::game_states::*;
 use crate::game_objects::*;
 
 impl GameState for GameLoop {
-    fn is_active(&self) -> bool {
-        return self.is_active;
-    }
-
-    fn get_next_state(&self) -> Box<dyn GameState> {
-        return Box::new(MainMenu::new());
-    }
-    
     fn update(&mut self, rl: &RaylibHandle){
         // Toggle debug mode
         if rl.is_key_pressed(KEY_TAB) { 
             self.debug_mode = !self.debug_mode; 
+        }
+
+        // Respawn player if outside of the screen
+        self.player.is_active = self.player.position.x > 0.0 && self.player.position.x <= SCREEN_SIZE.x;
+        if !self.player.is_active {
+            self.respawn_player(&rl);
+            return;
         }
 
         // Update player and it references
@@ -29,7 +28,6 @@ impl GameState for GameLoop {
         // Update paddles
         self.left_paddle.update(&rl);
         self.right_paddle.update(&rl);
-
         self.check_collisions();
     }
 
@@ -44,7 +42,9 @@ impl GameState for GameLoop {
         draw_handle.draw_text(&text, centralized_x as i32, (SCREEN_SIZE.y * 0.01) as i32, 22, self.score_color);
         
         // Draw game objects
-        draw_handle.draw_circle_v(self.player.position, self.player.radius, self.player.color);
+        if self.player.is_active { 
+            draw_handle.draw_circle_v(self.player.position, self.player.radius, self.player.color);
+        }
         draw_handle.draw_rectangle_rec(&self.left_paddle.hitbox, Color::GRAY);
         draw_handle.draw_rectangle_rec(&self.right_paddle.hitbox, Color::GRAY);
 
@@ -55,6 +55,10 @@ impl GameState for GameLoop {
             draw_handle.draw_text(&stats, 0, (SCREEN_SIZE.y * 0.05) as i32, 18, Color::GREEN);
         }
     }
+
+    fn is_active(&self) -> bool { return self.is_active; }
+    fn get_next_state(&self) -> Box<dyn GameState> { return Box::new(MainMenu::new()); }
+    
 }
 
 impl GameLoop {
@@ -62,9 +66,11 @@ impl GameLoop {
         return GameLoop {
             score: 0,
             checkpoint: 0,
+            respawn_timer: 0.0,
+
             hiscore: get_highscore(),
             score_color: Color::DARKGREEN,
-            
+
             is_active: true,
             debug_mode: false,
             bounced_vertically: false,
@@ -97,6 +103,104 @@ impl GameLoop {
                 INITIAL_PADDLE_RANGE
             ),
         }
+    }
+
+    fn get_debug_info(self: &Self) -> String {
+        let input = &self.player.input;
+        let mut stats = format!("- Prone: ({:.2}, {:.2}) \n- Move: ({:.2}, {:.2}\n", 
+                        self.player.prone_dir.x, self.player.prone_dir.y, 
+                        input.dir.x, input.dir.y);
+    
+        if self.player.input.on_gamepad {
+            stats += &format!(" {} \n ({:.2}, {:.2})", input.gamepad_name, 
+                     input.raw_dir.x, input.raw_dir.y);
+        }
+        
+        return stats;
+    }
+
+    fn check_collisions(self: &mut Self) {
+        // Bounce when hit a paddle
+        let hit_paddle = self.left_paddle.hitbox.check_collision_circle_rec(self.player.position, self.player.radius + 5.0) ||
+                         self.right_paddle.hitbox.check_collision_circle_rec(self.player.position, self.player.radius + 5.0);
+        
+        if hit_paddle {
+            let mut new_angle: f32 = thread_rng().gen_range(0.65..1.0);
+
+            // Copy player.input direction or keep previous direction 
+            if self.bounced_vertically || self.player.input.raw_dir.y == 0.0 { 
+                new_angle *= self.player.prone_dir.y.signum();
+            }
+            else { 
+                new_angle *= self.player.input.raw_dir.y.signum(); 
+            }
+            
+            // Randomly invert new angle direction when score is above 100
+            if self.score >= 100 && thread_rng().gen_range(0.0..1.0) > 0.65 { new_angle *= -1.0; }
+
+            // Keep player out of the paddles
+            let min = self.left_paddle.position.x + PADDLE_SIZE.x + self.player.radius;
+            let max = self.right_paddle.position.x - PADDLE_SIZE.x - self.player.radius;
+            self.player.position = self.player.position.clamp(min, max);
+
+            // Set new direction
+            self.bounced_vertically = false;
+            self.player.prone_dir.x *= -1.0;
+            self.player.prone_dir.y = new_angle;
+            self.player.input.dir = Vector2 { x: 0.0, y: 0.0 };
+          
+            self.score += 1;
+            self.update_difficulty();
+        }
+
+        // Bounce when hit top or bottom screen
+        if self.player.position.y == self.player.radius || self.player.position.y == SCREEN_SIZE.y - self.player.radius {
+            let mut new_angle = self.player.prone_dir.y.abs();
+            new_angle = new_angle.clamp(0.6, 1.0);
+
+            new_angle *= -self.player.prone_dir.y.signum();
+            self.player.prone_dir.y = new_angle;
+            self.bounced_vertically = true;
+
+            self.player.input.dir.x *= 0.5;
+            self.player.input.dir.y = 0.0;
+        }
+    }
+
+    fn respawn_player(self: &mut Self, rl: &RaylibHandle) {
+        // Wait for 1 second
+        self.respawn_timer += rl.get_frame_time();
+        if self.respawn_timer < 1.0 { return; }
+
+        // Reset variables
+        self.player.position = SCREEN_SIZE / 2.0;
+        self.left_paddle.position.y =  SCREEN_SIZE.y / 2.0 - PADDLE_SIZE.y / 2.0;
+        self.right_paddle.position.y =  SCREEN_SIZE.y / 2.0 - PADDLE_SIZE.y / 2.0;
+
+        self.player.input.dir = Vector2::zero();
+        self.player.prone_dir = Vector2 { x: -1.0, y: 0.0 };
+        
+        // Check for a new highscore
+        if self.score > self.hiscore { 
+            save_highscore(self.score);
+            self.hiscore = self.score;
+        }
+        
+        // Reset checkpoint if lose all lives 
+        if self.player.lives <= 1 {
+            self.player.radius += 1.6; 
+            self.player.lives = 3;
+            self.checkpoint = 0;
+        }
+        else { 
+            self.player.lives -= 1; 
+            self.player.radius -= 0.8;
+        }
+        
+        self.score = self.checkpoint;
+        self.player.is_active = true;
+        self.respawn_timer = 0.0;
+        self.update_difficulty();
     }
 
     fn update_difficulty(self: &mut Self) {
@@ -154,100 +258,5 @@ impl GameLoop {
             } 
             _=> {},
         }
-    }
-
-    fn get_debug_info(self: &Self) -> String {
-        let input = &self.player.input;
-        let mut stats = format!("- Prone: ({:.2}, {:.2}) \n- Move: ({:.2}, {:.2}\n", 
-                        self.player.prone_dir.x, self.player.prone_dir.y, 
-                        input.dir.x, input.dir.y);
-    
-        if self.player.input.on_gamepad {
-            stats += &format!(" {} \n ({:.2}, {:.2})", input.gamepad_name, 
-                     input.raw_dir.x, input.raw_dir.y);
-        }
-        
-        return stats;
-    }
-
-    fn check_collisions(self: &mut Self) {
-         // Restart if player is outside of the screen
-         if self.player.position.x > SCREEN_SIZE.x || self.player.position.x < 0.0 {
-
-            // Reset variables
-            self.player.position = SCREEN_SIZE / 2.0;
-            self.left_paddle.position.y =  SCREEN_SIZE.y / 2.0 - PADDLE_SIZE.y / 2.0;
-            self.right_paddle.position.y =  SCREEN_SIZE.y / 2.0 - PADDLE_SIZE.y / 2.0;
-
-            self.player.input.dir = Vector2::zero();
-            self.player.prone_dir = Vector2 { x: -1.0, y: 0.0 };
-            
-            // Check for a new highscore
-            if self.score > self.hiscore { 
-                save_highscore(self.score);
-                self.hiscore = self.score;
-            }
-            
-            // Reset checkpoint if lose all lives 
-            if self.player.lives <= 1 {
-                self.player.radius += 1.6; 
-                self.player.lives = 3;
-                self.checkpoint = 0;
-            }
-            else { 
-                self.player.lives -= 1; 
-                self.player.radius -= 0.8;
-            }
-            
-            self.score = self.checkpoint;
-            self.update_difficulty();
-        }
-
-        // Bounce when hit a paddle
-        let hit_paddle = self.left_paddle.hitbox.check_collision_circle_rec(self.player.position, self.player.radius + 5.0) ||
-                         self.right_paddle.hitbox.check_collision_circle_rec(self.player.position, self.player.radius + 5.0);
-        
-        if hit_paddle {
-            let mut new_angle: f32 = thread_rng().gen_range(0.65..1.0);
-
-            // Copy player.input direction or keep previous direction 
-            if self.bounced_vertically || self.player.input.raw_dir.y == 0.0 { 
-                new_angle *= self.player.prone_dir.y.signum();
-            }
-            else { 
-                new_angle *= self.player.input.raw_dir.y.signum(); 
-            }
-            
-            // Randomly invert new angle direction when score is above 100
-            if self.score >= 100 && thread_rng().gen_range(0.0..1.0) > 0.65 { new_angle *= -1.0; }
-
-            // Keep player out of the paddles
-            let min = self.left_paddle.position.x + PADDLE_SIZE.x + self.player.radius;
-            let max = self.right_paddle.position.x - PADDLE_SIZE.x - self.player.radius;
-            self.player.position = self.player.position.clamp(min, max);
-
-            // Set new direction
-            self.bounced_vertically = false;
-            self.player.prone_dir.x *= -1.0;
-            self.player.prone_dir.y = new_angle;
-            self.player.input.dir = Vector2 { x: 0.0, y: 0.0 };
-          
-            self.score += 1;
-            self.update_difficulty();
-        }
-
-        // Bounce when hit top or bottom screen
-        if self.player.position.y == self.player.radius || self.player.position.y == SCREEN_SIZE.y - self.player.radius {
-            let mut new_angle = self.player.prone_dir.y.abs();
-            new_angle = new_angle.clamp(0.6, 1.0);
-
-            new_angle *= -self.player.prone_dir.y.signum();
-            self.player.prone_dir.y = new_angle;
-            self.bounced_vertically = true;
-
-            self.player.input.dir.x *= 0.5;
-            self.player.input.dir.y = 0.0;
-        }
-
     }
 }

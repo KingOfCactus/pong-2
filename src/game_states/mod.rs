@@ -17,14 +17,16 @@ pub trait GameState {
 pub struct GameLoop {    
     score: i32,
     hiscore: i32,
-    checkpoint: i32,
     score_color: Color,
     
     player: Ball,
-    left_paddle: Paddle,
-    right_paddle: Paddle,
+    checkpoint: i32,
+    respawn_timer: f32,
     bounced_vertically: bool,
     
+    left_paddle: Paddle,
+    right_paddle: Paddle,
+
     is_active: bool,
     debug_mode: bool
 }
