@@ -60,14 +60,15 @@ impl GameState for GameLoop {
 impl GameLoop {
     pub fn new() -> GameLoop {
         return GameLoop {
-            is_active: true,
-            debug_mode: false,
-
             score: 0,
             checkpoint: 0,
-            hiscore: get_highscore(), 
+            hiscore: get_highscore(),
             score_color: Color::DARKGREEN,
             
+            is_active: true,
+            debug_mode: false,
+            bounced_vertically: false,
+
             player: Ball::new(
                 Vector2::new(SCREEN_SIZE.x * 0.9, SCREEN_SIZE.y * 0.5), [
                     Color::new(188, 212, 230, 150), // 1 live - #BCD4E6
@@ -180,7 +181,7 @@ impl GameLoop {
 
             self.player.input.dir = Vector2::zero();
             self.player.prone_dir = Vector2 { x: -1.0, y: 0.0 };
-
+            
             // Check for a new highscore
             if self.score > self.hiscore { 
                 save_highscore(self.score);
@@ -197,7 +198,7 @@ impl GameLoop {
                 self.player.lives -= 1; 
                 self.player.radius -= 0.8;
             }
-
+            
             self.score = self.checkpoint;
             self.update_difficulty();
         }
@@ -210,10 +211,14 @@ impl GameLoop {
             let mut new_angle: f32 = thread_rng().gen_range(0.65..1.0);
 
             // Copy player.input direction or keep previous direction 
-            if self.player.input.raw_dir.y == 0.0 { new_angle *= self.player.prone_dir.y.signum(); }
-            else { new_angle *= self.player.input.raw_dir.y.signum(); }
+            if self.bounced_vertically || self.player.input.raw_dir.y == 0.0 { 
+                new_angle *= self.player.prone_dir.y.signum();
+            }
+            else { 
+                new_angle *= self.player.input.raw_dir.y.signum(); 
+            }
             
-            // Randomly invert new angle direction
+            // Randomly invert new angle direction when score is above 100
             if self.score >= 100 && thread_rng().gen_range(0.0..1.0) > 0.65 { new_angle *= -1.0; }
 
             // Keep player out of the paddles
@@ -222,6 +227,7 @@ impl GameLoop {
             self.player.position = self.player.position.clamp(min, max);
 
             // Set new direction
+            self.bounced_vertically = false;
             self.player.prone_dir.x *= -1.0;
             self.player.prone_dir.y = new_angle;
             self.player.input.dir = Vector2 { x: 0.0, y: 0.0 };
@@ -237,7 +243,8 @@ impl GameLoop {
 
             new_angle *= -self.player.prone_dir.y.signum();
             self.player.prone_dir.y = new_angle;
-            
+            self.bounced_vertically = true;
+
             self.player.input.dir.x *= 0.5;
             self.player.input.dir.y = 0.0;
         }

@@ -23,6 +23,7 @@ pub struct GameLoop {
     player: Ball,
     left_paddle: Paddle,
     right_paddle: Paddle,
+    bounced_vertically: bool,
     
     is_active: bool,
     debug_mode: bool
