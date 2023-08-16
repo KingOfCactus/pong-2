@@ -20,6 +20,11 @@ impl GameState for GameLoop {
             return;
         }
 
+        // After respawn, wait for input to apply prone_dir
+        if self.player.prone_dir == Vector2::zero() && self.player.input.dir != Vector2::zero() {
+            self.player.prone_dir = Vector2::new(-1.0, 0.0);
+        }
+
         // Update player and it references
         self.player.update(&rl);
         self.left_paddle.player_pos = self.player.position;
@@ -76,7 +81,7 @@ impl GameLoop {
             bounced_vertically: false,
 
             player: Ball::new(
-                Vector2::new(SCREEN_SIZE.x * 0.9, SCREEN_SIZE.y * 0.5), [
+                Vector2::new(SCREEN_SIZE.x * 0.5, SCREEN_SIZE.y * 0.5), [
                     Color::new(188, 212, 230, 150), // 1 live - #BCD4E6
                     Color::new(137, 207, 240, 150), // 2 lives - #89CFF0
                     Color::new(10, 255, 255, 150)   // 3 lives - #6CB4EE
@@ -187,7 +192,8 @@ impl GameLoop {
         }
         
         // Reset checkpoint if lose all lives 
-        if self.player.lives <= 1 {
+        if self.player.lives <= 1 { 
+            self.player.prone_dir = Vector2::zero();
             self.player.radius += 1.6; 
             self.player.lives = 3;
             self.checkpoint = 0;

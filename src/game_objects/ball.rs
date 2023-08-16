@@ -20,8 +20,8 @@ impl Ball {
                 color: colors[2],
                 input : InputData::new(), 
                 velocity: Vector2::zero(), 
-                position, radius, speed, colors,
-                prone_dir: Vector2 { x: -1.0, y: 0.0},
+                prone_dir: Vector2::zero(),
+                position, radius, speed, colors
             }
     }
 
