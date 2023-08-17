@@ -18,7 +18,7 @@ impl Ball {
                 lives: 3,
                 is_active: true,
                 color: colors[2],
-                input : InputData::new(), 
+                input : InputData::new(3.0), 
                 velocity: Vector2::zero(), 
                 prone_dir: Vector2::zero(),
                 position, radius, speed, colors
@@ -40,7 +40,7 @@ impl Ball {
         }
         
         self.color = self.colors[self.lives as usize - 1];
-        self.color.a = alpha.clamp(self.color.a as f32, 255.0) as u8;
+        // self.color.a = alpha.clamp(self.color.a as f32, 255.0) as u8;
     }
 
     // Rust compiler don't let me name it move() >:(
@@ -54,6 +54,6 @@ impl Ball {
         // get newest input data
         InputData::update_data(&mut self.input, rl);
         let desired_dir = self.input.dir * Vector2 { x: 1.0 / 2.0, y: 1.0 / 1.50}; // TODO: Remove hardcoded vector2 multiplier
-        self.velocity = (self.prone_dir + desired_dir) * self.speed;
+        self.velocity = (self.prone_dir) * self.speed;
     }
 }

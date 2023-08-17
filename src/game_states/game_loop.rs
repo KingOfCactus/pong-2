@@ -50,8 +50,8 @@ impl GameState for GameLoop {
         if self.player.is_active { 
             draw_handle.draw_circle_v(self.player.position, self.player.radius, self.player.color);
         }
-        draw_handle.draw_rectangle_rec(&self.left_paddle.hitbox, Color::GRAY);
-        draw_handle.draw_rectangle_rec(&self.right_paddle.hitbox, Color::GRAY);
+        draw_handle.draw_rectangle_rec(&self.left_paddle.hitbox, &self.left_paddle.color);
+        draw_handle.draw_rectangle_rec(&self.right_paddle.hitbox, &self.right_paddle.color);
 
         // Draw debug info
         if self.debug_mode {
@@ -68,7 +68,7 @@ impl GameState for GameLoop {
 
 impl GameLoop {
     pub fn new() -> GameLoop {
-        return GameLoop {
+        let mut a = GameLoop {
             score: 0,
             checkpoint: 0,
             respawn_timer: 0.0,
@@ -93,9 +93,10 @@ impl GameLoop {
                     x: PADDLE_PADDING, 
                     y: SCREEN_SIZE.y / 2.0 - PADDLE_SIZE.y / 2.0 
                 },
-                Color::WHITE, PADDLE_SIZE, 
+                Color::GRAY, PADDLE_SIZE, 
                 INITIAL_PADDLE_SPEED,
-                INITIAL_PADDLE_RANGE
+                INITIAL_PADDLE_RANGE, 
+                true
             ), 
 
             right_paddle: Paddle::new(
@@ -103,11 +104,14 @@ impl GameLoop {
                     x: SCREEN_SIZE.x - PADDLE_SIZE.x - PADDLE_PADDING, 
                     y: SCREEN_SIZE.y / 2.0 - PADDLE_SIZE.y / 2.0 
                 },
-                Color::WHITE, PADDLE_SIZE, 
+                Color::GRAY, PADDLE_SIZE, 
                 INITIAL_PADDLE_SPEED,
-                INITIAL_PADDLE_RANGE
+                INITIAL_PADDLE_RANGE, 
+                true
             ),
-        }
+        };
+        a.left_paddle.is_active = true;
+        return a;
     }
 
     fn get_debug_info(self: &Self) -> String {
@@ -152,8 +156,11 @@ impl GameLoop {
             self.bounced_vertically = false;
             self.player.prone_dir.x *= -1.0;
             self.player.prone_dir.y = new_angle;
-            self.player.input.dir = Vector2 { x: 0.0, y: 0.0 };
-          
+            self.player.input.dir = Vector2::zero();
+            
+            self.left_paddle.is_active = !self.left_paddle.is_active;
+            self.right_paddle.is_active = !self.right_paddle.is_active;
+
             self.score += 1;
             self.update_difficulty();
         }
@@ -203,8 +210,11 @@ impl GameLoop {
             self.player.radius -= 0.8;
         }
         
-        self.score = self.checkpoint;
         self.player.is_active = true;
+        self.left_paddle.is_active = true;
+        self.right_paddle.is_active = false;
+
+        self.score = self.checkpoint;
         self.respawn_timer = 0.0;
         self.update_difficulty();
     }

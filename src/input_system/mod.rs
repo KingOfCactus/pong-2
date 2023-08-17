@@ -20,12 +20,12 @@ pub struct InputData {
 }
 
 impl InputData {
-    pub fn new() -> Self {
+    pub fn new(smoothness:f32) -> Self {
         return Self {
             on_gamepad: false,
             gamepad_name: String::new(),
             
-            smoothness: 3.0,
+            smoothness: smoothness,
             raw_dir: Vector2::zero(),
             dir: Vector2::zero(),
 
