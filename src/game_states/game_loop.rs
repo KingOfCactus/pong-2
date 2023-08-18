@@ -92,9 +92,11 @@ impl GameLoop {
                 Vector2 { 
                     x: PADDLE_PADDING, 
                     y: SCREEN_SIZE.y / 2.0 - PADDLE_SIZE.y / 2.0 
-                },
-                Color::GRAY, PADDLE_SIZE, 
-                INITIAL_PADDLE_SPEED,
+                }, [
+                    Color::new(255, 255, 255, 130), // Neutral
+                    Color::new(255, 60, 40, 130)  // Max speed
+                ],
+                PADDLE_SIZE, INITIAL_PADDLE_SPEED,
                 INITIAL_PADDLE_RANGE, 
                 true
             ), 
@@ -103,9 +105,11 @@ impl GameLoop {
                 Vector2 { 
                     x: SCREEN_SIZE.x - PADDLE_SIZE.x - PADDLE_PADDING, 
                     y: SCREEN_SIZE.y / 2.0 - PADDLE_SIZE.y / 2.0 
-                },
-                Color::GRAY, PADDLE_SIZE, 
-                INITIAL_PADDLE_SPEED,
+                }, [
+                    Color::new(255, 255, 255, 130), // Neutral
+                    Color::new(255, 60, 40, 130)  // Max speed
+                ], 
+                PADDLE_SIZE, INITIAL_PADDLE_SPEED,
                 INITIAL_PADDLE_RANGE, 
                 true
             ),

@@ -33,18 +33,19 @@ pub struct Ball {
 }
 
 pub struct Paddle {
-    pub position: Vector2,
-    pub velocity: f32,
-    pub speed: f32,
+    pub is_active: bool,
+    pub input: InputData,
 
-    pub color: Color,
+    pub speed: f32,
+    pub velocity: f32,
+    pub position: Vector2,
+    
     pub size: Vector2,
     pub view_range: f32,
-    
     pub hitbox: Rectangle,
     pub player_pos: Vector2,
 
-    pub input: InputData,
-    pub is_active: bool,
+    pub color: Color,
+    pub colors: [Color; 2],
     pub player_controlled: bool,
 }
