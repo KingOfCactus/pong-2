@@ -20,7 +20,7 @@ impl Paddle {
                         is_active: false, player_controlled, 
                         colors, view_range, position, speed, size, color: colors[0],
                         hitbox: Rectangle::new( position.x, position.y, size.x, size.y),
-                        velocity: 0.0, player_pos: Vector2::zero(), input: InputData::new(7.0), 
+                        velocity: 0.0, player_pos: Vector2::zero(), input: InputData::new(7.0, false), 
                     }
     }
 

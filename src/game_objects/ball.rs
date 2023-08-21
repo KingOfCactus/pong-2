@@ -18,7 +18,7 @@ impl Ball {
                 lives: 3,
                 is_active: true,
                 color: colors[2],
-                input : InputData::new(3.0), 
+                input : InputData::new(3.0, true), 
                 velocity: Vector2::zero(), 
                 prone_dir: Vector2::zero(),
                 position, radius, speed, colors
