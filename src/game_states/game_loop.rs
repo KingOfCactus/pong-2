@@ -93,8 +93,8 @@ impl GameLoop {
                     x: PADDLE_PADDING, 
                     y: SCREEN_SIZE.y / 2.0 - PADDLE_SIZE.y / 2.0 
                 }, [
-                    Color::new(255, 255, 255, 130), // Neutral
-                    Color::new(255, 60, 40, 130)  // Max speed
+                    Color::new(255, 105, 97, 130), // Player is far - #FF6961
+                    Color::new(255, 40, 0, 130)    // Player is close - #FF2800
                 ],
                 PADDLE_SIZE, INITIAL_PADDLE_SPEED,
                 INITIAL_PADDLE_RANGE, 
@@ -106,8 +106,8 @@ impl GameLoop {
                     x: SCREEN_SIZE.x - PADDLE_SIZE.x - PADDLE_PADDING, 
                     y: SCREEN_SIZE.y / 2.0 - PADDLE_SIZE.y / 2.0 
                 }, [
-                    Color::new(255, 255, 255, 130), // Neutral
-                    Color::new(255, 60, 40, 130)  // Max speed
+                    Color::new(255, 105, 97, 130), // Player is far - #FF6961
+                    Color::new(255, 40, 0, 130)    // Player is close - #FF2800
                 ], 
                 PADDLE_SIZE, INITIAL_PADDLE_SPEED,
                 INITIAL_PADDLE_RANGE, 
