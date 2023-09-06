@@ -2,38 +2,43 @@ use rand::*;
 use raylib::prelude::*;
 use raylib::ffi::KeyboardKey::*;
 
+use crate::input_system::*;
 use crate::utils::*;
 use crate::game_states::*;
 use crate::game_objects::*;
 
 impl GameState for GameLoop {
     fn update(&mut self, rl: &RaylibHandle){
+        let mut ball_input = self.ball.player_data.get_last_input();
+
         // Toggle debug mode
         if rl.is_key_pressed(KEY_TAB) { 
             self.debug_mode = !self.debug_mode; 
         }
 
-        // Respawn player if outside of the screen
-        self.player.is_active = self.player.position.x > 0.0 && self.player.position.x <= SCREEN_SIZE.x;
-        if !self.player.is_active {
+        // Respawn ball if outside of the screen
+        self.ball.is_active = self.ball.position.x > 0.0 && self.ball.position.x <= SCREEN_SIZE.x;
+        if !self.ball.is_active {
             self.respawn_player(&rl);
             return;
         }
 
         // After respawn, wait for input to apply prone_dir
-        if self.player.prone_dir == Vector2::zero() && self.player.input.dir != Vector2::zero() {
-            self.player.prone_dir = Vector2::new(-1.0, 0.0);
+        if self.ball.prone_dir == Vector2::zero() && ball_input.dir != Vector2::zero() {
+            self.ball.prone_dir = Vector2::new(-1.0, 0.0);
         }
 
-        // Update player and it references
-        self.player.update(&rl);
-        self.left_paddle.player_pos = self.player.position;
-        self.right_paddle.player_pos = self.player.position;
+        // Update ball and it references
+        self.ball.update(&rl);
+        self.left_paddle.player_pos = self.ball.position;
+        self.right_paddle.player_pos = self.ball.position;
         
+        ball_input = self.ball.player_data.get_last_input();
+
         // Update paddles
         self.left_paddle.update(&rl);
         self.right_paddle.update(&rl);
-        self.check_collisions();
+        self.check_collisions(&ball_input);
     }
 
     fn draw(&mut self, rl: &mut RaylibHandle, thread: &RaylibThread){
@@ -47,8 +52,8 @@ impl GameState for GameLoop {
         draw_handle.draw_text(&text, centralized_x as i32, (SCREEN_SIZE.y * 0.01) as i32, 22, self.score_color);
         
         // Draw game objects
-        if self.player.is_active { 
-            draw_handle.draw_circle_v(self.player.position, self.player.radius, self.player.color);
+        if self.ball.is_active { 
+            draw_handle.draw_circle_v(self.ball.position, self.ball.radius, self.ball.color);
         }
         draw_handle.draw_rectangle_rec(&self.left_paddle.hitbox, &self.left_paddle.color);
         draw_handle.draw_rectangle_rec(&self.right_paddle.hitbox, &self.right_paddle.color);
@@ -80,12 +85,12 @@ impl GameLoop {
             debug_mode: false,
             bounced_vertically: false,
 
-            player: Ball::new(
+            ball: Ball::new(
                 Vector2::new(SCREEN_SIZE.x * 0.5, SCREEN_SIZE.y * 0.5), [
                     Color::new(188, 212, 230, 150), // 1 live - #BCD4E6
                     Color::new(137, 207, 240, 150), // 2 lives - #89CFF0
                     Color::new(10, 255, 255, 150)   // 3 lives - #6CB4EE
-                ], 10.8, MAX_PLAYER_SPEED * 0.63,
+                ], 10.8, MAX_PLAYER_SPEED * 0.63
             ),
 
             left_paddle: Paddle::new(
@@ -116,51 +121,58 @@ impl GameLoop {
         };
         a.left_paddle.is_active = true;
         return a;
+
+        todo!("Fix this ugly hack");
     }
 
     fn get_debug_info(self: &Self) -> String {
-        let input = &self.player.input;
-        let mut stats = format!("- Prone: ({:.2}, {:.2}) \n- Move: ({:.2}, {:.2}\n", 
-                        self.player.prone_dir.x, self.player.prone_dir.y, 
-                        input.dir.x, input.dir.y);
+        // let mut stats = format!("- Prone: ({:.2}, {:.2}) \n- Move: ({:.2}, {:.2}\n", 
+        //                 self.ball.prone_dir.x, self.ball.prone_dir.y, 
+        //                 ball_input.dir.x, ball_input.dir.y);
     
-        if self.player.input.on_gamepad {
-            stats += &format!(" {} \n ({:.2}, {:.2})", input.gamepad_name, 
-                     input.raw_dir.x, input.raw_dir.y);
-        }
+        // if ball_input.on_gamepad {
+        //    stats += &format!(" {} \n ({:.2}, {:.2})", input.gamepad_name, 
+        //             input.raw_dir.x, input.raw_dir.y);
+        // }
         
-        return stats;
+        // return stats;
+
+        todo!("Fix this and made so that every localplayer information in show");
+        return "".to_string();
+
     }
 
-    fn check_collisions(self: &mut Self) {
+    fn check_collisions(self: &mut Self, ball_input: &InputData) {
+        
         // Bounce when hit a paddle
-        let hit_paddle = self.left_paddle.hitbox.check_collision_circle_rec(self.player.position, self.player.radius + 5.0) ||
-                         self.right_paddle.hitbox.check_collision_circle_rec(self.player.position, self.player.radius + 5.0);
+        let hit_paddle = self.left_paddle.hitbox.check_collision_circle_rec(self.ball.position, self.ball.radius + 5.0) ||
+                         self.right_paddle.hitbox.check_collision_circle_rec(self.ball.position, self.ball.radius + 5.0);
         
         if hit_paddle {
             let mut new_angle: f32 = thread_rng().gen_range(0.65..1.0);
 
-            // Copy player.input direction or keep previous direction 
-            if self.bounced_vertically || self.player.input.raw_dir.y == 0.0 { 
-                new_angle *= self.player.prone_dir.y.signum();
+            // Copy ball.input direction or keep previous direction 
+            if self.bounced_vertically || ball_input.raw_dir.y == 0.0 { 
+                new_angle *= self.ball.prone_dir.y.signum();
             }
             else { 
-                new_angle *= self.player.input.raw_dir.y.signum(); 
+                new_angle *= ball_input.raw_dir.y.signum(); 
             }
             
             // Randomly invert new angle direction when score is above 100
             if self.score >= 100 && thread_rng().gen_range(0.0..1.0) > 0.65 { new_angle *= -1.0; }
 
-            // Keep player out of the paddles
-            let min = self.left_paddle.position.x + PADDLE_SIZE.x + self.player.radius;
-            let max = self.right_paddle.position.x - PADDLE_SIZE.x - self.player.radius;
-            self.player.position = self.player.position.clamp(min, max);
+            // Keep ball out of the paddles
+            let min = self.left_paddle.position.x + PADDLE_SIZE.x + self.ball.radius;
+            let max = self.right_paddle.position.x - PADDLE_SIZE.x - self.ball.radius;
+            self.ball.position = self.ball.position.clamp(min, max);
 
             // Set new direction
             self.bounced_vertically = false;
-            self.player.prone_dir.x *= -1.0;
-            self.player.prone_dir.y = new_angle;
-            self.player.input.dir = Vector2::zero();
+            self.ball.prone_dir.x *= -1.0;
+            self.ball.prone_dir.y = new_angle;
+           
+            // ball_input.dir = Vector2::zero();
             
             self.left_paddle.is_active = !self.left_paddle.is_active;
             self.right_paddle.is_active = !self.right_paddle.is_active;
@@ -170,17 +182,20 @@ impl GameLoop {
         }
 
         // Bounce when hit top or bottom screen
-        if self.player.position.y == self.player.radius || self.player.position.y == SCREEN_SIZE.y - self.player.radius {
-            let mut new_angle = self.player.prone_dir.y.abs();
+        if self.ball.position.y == self.ball.radius || self.ball.position.y == SCREEN_SIZE.y - self.ball.radius {
+            let mut new_angle = self.ball.prone_dir.y.abs();
             new_angle = new_angle.clamp(0.6, 1.0);
 
-            new_angle *= -self.player.prone_dir.y.signum();
-            self.player.prone_dir.y = new_angle;
+            new_angle *= -self.ball.prone_dir.y.signum();
+            self.ball.prone_dir.y = new_angle;
             self.bounced_vertically = true;
 
-            self.player.input.dir.x *= 0.5;
-            self.player.input.dir.y = 0.0;
+            // ball_input.dir.x *= 0.5;
+            // ball_input.dir.y = 0.0;
         }
+
+        return;
+        todo!("Made so that the ball input dir interlation can be modified again");
     }
 
     fn respawn_player(self: &mut Self, rl: &RaylibHandle) {
@@ -189,12 +204,12 @@ impl GameLoop {
         if self.respawn_timer < 1.0 { return; }
 
         // Reset variables
-        self.player.position = SCREEN_SIZE / 2.0;
+        self.ball.position = SCREEN_SIZE / 2.0;
         self.left_paddle.position.y =  SCREEN_SIZE.y / 2.0 - PADDLE_SIZE.y / 2.0;
         self.right_paddle.position.y =  SCREEN_SIZE.y / 2.0 - PADDLE_SIZE.y / 2.0;
 
-        self.player.input.dir = Vector2::zero();
-        self.player.prone_dir = Vector2 { x: -1.0, y: 0.0 };
+        // self.ball.input.dir = Vector2::zero();
+        self.ball.prone_dir = Vector2 { x: -1.0, y: 0.0 };
         
         // Check for a new highscore
         if self.score > self.hiscore { 
@@ -203,18 +218,18 @@ impl GameLoop {
         }
         
         // Reset checkpoint if lose all lives 
-        if self.player.lives <= 1 { 
-            self.player.prone_dir = Vector2::zero();
-            self.player.radius += 1.6; 
-            self.player.lives = 3;
+        if self.ball.lives <= 1 { 
+            self.ball.prone_dir = Vector2::zero();
+            self.ball.radius += 1.6; 
+            self.ball.lives = 3;
             self.checkpoint = 0;
         }
         else { 
-            self.player.lives -= 1; 
-            self.player.radius -= 0.8;
+            self.ball.lives -= 1; 
+            self.ball.radius -= 0.8;
         }
         
-        self.player.is_active = true;
+        self.ball.is_active = true;
         self.left_paddle.is_active = true;
         self.right_paddle.is_active = false;
 
@@ -228,7 +243,7 @@ impl GameLoop {
             0 => {
                 self.checkpoint = 0;
                 self.score_color = Color::DARKGREEN;
-                self.player.speed = MAX_PLAYER_SPEED * 0.63;
+                self.ball.speed = MAX_PLAYER_SPEED * 0.63;
 
                 self.left_paddle.speed = INITIAL_PADDLE_SPEED;
                 self.right_paddle.speed = INITIAL_PADDLE_SPEED;
@@ -239,7 +254,7 @@ impl GameLoop {
             10 => {
                 self.checkpoint = 10;
                 self.score_color = Color::GREEN;
-                self.player.speed = MAX_PLAYER_SPEED * 0.75;
+                self.ball.speed = MAX_PLAYER_SPEED * 0.75;
 
                 self.left_paddle.speed = INITIAL_PADDLE_SPEED * 0.85;
                 self.right_paddle.speed = INITIAL_PADDLE_SPEED * 0.85;
@@ -248,7 +263,7 @@ impl GameLoop {
             25 => {
                 self.checkpoint = 25;
                 self.score_color = Color::YELLOW;
-                self.player.speed = MAX_PLAYER_SPEED * 0.85;
+                self.ball.speed = MAX_PLAYER_SPEED * 0.85;
 
                 self.left_paddle.speed = INITIAL_PADDLE_SPEED * 0.74;
                 self.right_paddle.speed = INITIAL_PADDLE_SPEED * 0.74;
@@ -259,7 +274,7 @@ impl GameLoop {
             50 => {
                 self.checkpoint = 50;
                 self.score_color = Color::GOLD;
-                self.player.speed = MAX_PLAYER_SPEED * 0.95;
+                self.ball.speed = MAX_PLAYER_SPEED * 0.95;
 
                 self.left_paddle.speed = INITIAL_PADDLE_SPEED * 0.7;
                 self.right_paddle.speed = INITIAL_PADDLE_SPEED * 0.7;
@@ -270,7 +285,7 @@ impl GameLoop {
             75 => {
                 self.checkpoint = 75;
                 self.score_color = Color::RED;
-                self.player.speed = MAX_PLAYER_SPEED;
+                self.ball.speed = MAX_PLAYER_SPEED;
                 self.left_paddle.speed = INITIAL_PADDLE_SPEED * 0.55;
                 self.right_paddle.speed = INITIAL_PADDLE_SPEED * 0.55;
                 self.left_paddle.view_range = INITIAL_PADDLE_RANGE * 0.7;

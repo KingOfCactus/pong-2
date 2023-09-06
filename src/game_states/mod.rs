@@ -19,7 +19,7 @@ pub struct GameLoop {
     hiscore: i32,
     score_color: Color,
     
-    player: Ball,
+    ball: Ball,
     checkpoint: i32,
     respawn_timer: f32,
     bounced_vertically: bool,

@@ -6,8 +6,9 @@ use crate::game_objects::*;
 
 impl GameObject for Paddle {
     fn update(&mut self, rl: &RaylibHandle) {
-        InputData::update_data(&mut self.input, rl);
-        self.update_velocity(&rl);
+        let input = self.player_data.get_input(&rl);
+        
+        self.update_velocity(&input);
         self.update_color(&rl);
         self.translate(rl);
     }
@@ -19,8 +20,10 @@ impl Paddle {
                     return Paddle { 
                         is_active: false, player_controlled, 
                         colors, view_range, position, speed, size, color: colors[0],
-                        hitbox: Rectangle::new( position.x, position.y, size.x, size.y),
-                        velocity: 0.0, player_pos: Vector2::zero(), input: InputData::new(7.0, false), 
+                        hitbox: Rectangle::new(position.x, position.y, size.x, size.y),
+                        velocity: 0.0, player_pos: Vector2::zero(), 
+                        player_data: PlayerData::new(1, Box::new(KeyboardInput::new()), 7.0, false) 
+                        // player_data: PlayerData::new(1, Box::new(GamepadInput::new(0, true)), 7.0, false) 
                     }
     }
 
@@ -31,7 +34,7 @@ impl Paddle {
         let mut alpha = self.color.a as f32;
         let mut input_intensity = 1.0;
         if !self.is_active { input_intensity = 0.0; }
-        // let input_intensity = (self.input.dir.x.abs() + self.input.dir.y.abs()) / 2.0;
+        // let input_intensity = (input.dir.x.abs() + input.dir.y.abs()) / 2.0;
 
         // go to white if active
         if self.is_active{
@@ -52,7 +55,7 @@ impl Paddle {
         self.color.a = alpha.clamp(130.0 as f32, 255.0) as u8;
     }
 
-    fn update_velocity(&mut self, rl: &RaylibHandle) {
+    fn update_velocity(&mut self, input: &InputData) {
         let closeness = self.get_player_pos_closeness();
         let distance = self.player_pos.y - self.position.y;
         
@@ -62,7 +65,7 @@ impl Paddle {
                 return;
             }
 
-            self.velocity = (self.input.dir.y * self.speed * 0.6) + (self.input.raw_dir.y * closeness.powf(3.0) * self.speed * 0.7);
+            self.velocity = (input.dir.y * self.speed * 0.6) + (input.raw_dir.y * closeness.powf(3.0) * self.speed * 0.7);
             return;
         }
 

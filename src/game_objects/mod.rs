@@ -28,13 +28,13 @@ pub struct Ball {
     pub lives: i32,
 
     pub is_active: bool,
-    pub input : InputData,
+    pub player_data: PlayerData,
     pub prone_dir : Vector2,
 }
 
 pub struct Paddle {
     pub is_active: bool,
-    pub input: InputData,
+    pub player_data: PlayerData,
 
     pub speed: f32,
     pub velocity: f32,
