@@ -12,7 +12,7 @@ impl PlayerInput {
 
     fn read_data(self: &mut Self, rl: &RaylibHandle) -> InputData {
         let mut data = InputData::new(rl.get_time());
-        let last_dir = self.last_data.dir;
+        let previous_dir = self.last_data.dir;
 
         // Get buttons
         let buttons = self.device.get_buttons(&rl);
@@ -23,16 +23,16 @@ impl PlayerInput {
 
         // Get raw direction
         if self.device.use_axis() { data.raw_dir = self.device.get_axis(&rl); }
-        else { data.raw_dir = self.buttons_to_dir(&buttons); }
+        else { data.raw_dir = self.buttons_to_dir(&buttons, &previous_dir); }
 
         // Smooth raw direction to dir
-        data.dir = last_dir.lerp(data.raw_dir, self.input_snapness * rl.get_frame_time());
+        data.dir = previous_dir.lerp(data.raw_dir, self.input_snapness * rl.get_frame_time());
         return data;
     }
 
     // Convert buttons to a direction vector, while applying SOCD cleaning
     // (https://www.hitboxarcade.com/blogs/support/what-is-socd)
-    fn buttons_to_dir(self: &mut Self, raw_data: &[bool; 4]) -> Vector2 {
+    fn buttons_to_dir(self: &mut Self, raw_data: &[bool; 4], previous_dir: &Vector2) -> Vector2 {
         let mut dir = Vector2::zero();
         let is_right_down = raw_data[0];
         let is_left_down = raw_data[1];
@@ -44,10 +44,13 @@ impl PlayerInput {
             if !is_right_down && !is_left_down { dir.x = 0.0; }
             else if is_right_down && !is_left_down { dir.x = 1.0; }
             else if !is_right_down { dir.x = -1.0; }
-            
+            else { dir.x = previous_dir.x }
+
             if !is_down_down && !is_up_down { dir.y = 0.0; }
             else if is_down_down && !is_up_down { dir.y = 1.0; }
             else if !is_down_down {dir.y = -1.0; }
+            else { dir.y = previous_dir.y }
+
         }
         // Use Neutral resolution 
         else {
