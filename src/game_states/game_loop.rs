@@ -86,7 +86,7 @@ impl GameLoop {
             players_input: vec![
                 // Player 1
                 // PlayerInput::new(0, Box::new(GamepadInput::new(0, true)), 3.0, true),
-                PlayerInput::new(0, Box::new(KeyboardInput::new()), 3.0, true),
+                PlayerInput::new(0, Box::new(KeyboardInput::new(false)), 3.0, true),
 
                 // Player 2
                 // PlayerInput::new(1, Box::new(KeyboardInput::new()), 7.0, false),

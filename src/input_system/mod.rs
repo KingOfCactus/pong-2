@@ -46,7 +46,9 @@ pub struct PlayerInput {
     device: Box<dyn InputDevice>,
 }
 
-pub struct KeyboardInput;
+pub struct KeyboardInput {
+    use_wasd: bool
+}
 pub struct GamepadInput {
     gamepad_id: i32,
     use_axis: bool

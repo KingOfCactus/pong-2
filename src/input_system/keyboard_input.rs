@@ -9,17 +9,22 @@ impl InputDevice for KeyboardInput {
     }
 
     fn get_buttons(self: &mut Self, rl: &RaylibHandle) -> [bool; 4] {
-        return [
-            (rl.is_key_down(KEY_D) || rl.is_key_down(KEY_RIGHT)),
-            (rl.is_key_down(KEY_A) || rl.is_key_down(KEY_LEFT)),
-            (rl.is_key_down(KEY_S) || rl.is_key_down(KEY_DOWN)),
-            (rl.is_key_down(KEY_W) || rl.is_key_down(KEY_UP))
+        // Use WASD
+        if self.use_wasd {
+            return [rl.is_key_down(KEY_D), rl.is_key_down(KEY_A),
+                    rl.is_key_down(KEY_S), rl.is_key_down(KEY_W)
+            ]
+        }
+
+        // Use arrows
+        return [rl.is_key_down(KEY_RIGHT), rl.is_key_down(KEY_LEFT),
+                rl.is_key_down(KEY_DOWN), rl.is_key_down(KEY_UP)
         ]
     }
 }
 
 impl KeyboardInput {
-    pub fn new() -> Self {
-        return Self;
+    pub fn new(use_wasd: bool) -> Self {
+        return Self { use_wasd };
     }
 }
