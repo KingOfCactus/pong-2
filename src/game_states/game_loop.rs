@@ -8,8 +8,9 @@ use crate::game_states::*;
 use crate::game_objects::*;
 
 impl GameState for GameLoop {
-    fn update(&mut self, rl: &RaylibHandle){
-        let mut ball_input = self.ball.player_data.get_last_input();
+    fn update(self: &mut Self, rl: &RaylibHandle){
+        let ball_input = self.players_input[0].get_data(rl);
+        let paddle_input = self.players_input[1].get_data(rl);
 
         // Toggle debug mode
         if rl.is_key_pressed(KEY_TAB) { 
@@ -29,15 +30,13 @@ impl GameState for GameLoop {
         }
 
         // Update ball and it references
-        self.ball.update(&rl);
+        self.ball.update(&rl, &ball_input);
         self.left_paddle.player_pos = self.ball.position;
         self.right_paddle.player_pos = self.ball.position;
         
-        ball_input = self.ball.player_data.get_last_input();
-
         // Update paddles
-        self.left_paddle.update(&rl);
-        self.right_paddle.update(&rl);
+        self.left_paddle.update(&rl, &paddle_input);
+        self.right_paddle.update(&rl, &paddle_input);
         self.check_collisions(&ball_input);
     }
 
@@ -68,7 +67,6 @@ impl GameState for GameLoop {
 
     fn is_active(&self) -> bool { return self.is_active; }
     fn get_next_state(&self) -> Box<dyn GameState> { return Box::new(MainMenu::new()); }
-    
 }
 
 impl GameLoop {
@@ -84,7 +82,17 @@ impl GameLoop {
             is_active: true,
             debug_mode: false,
             bounced_vertically: false,
+            
+            players_input: vec![
+                // Player 1
+                // PlayerInput::new(0, Box::new(GamepadInput::new(0, true)), 3.0, true),
+                PlayerInput::new(0, Box::new(KeyboardInput::new()), 3.0, true),
 
+                // Player 2
+                // PlayerInput::new(1, Box::new(KeyboardInput::new()), 7.0, false),
+                PlayerInput::new(1, Box::new(GamepadInput::new(0, true)), 7.0, false) 
+            ],
+            
             ball: Ball::new(
                 Vector2::new(SCREEN_SIZE.x * 0.5, SCREEN_SIZE.y * 0.5), [
                     Color::new(188, 212, 230, 150), // 1 live - #BCD4E6
@@ -103,7 +111,7 @@ impl GameLoop {
                 ],
                 PADDLE_SIZE, INITIAL_PADDLE_SPEED,
                 INITIAL_PADDLE_RANGE, 
-                true
+                false
             ), 
 
             right_paddle: Paddle::new(
@@ -116,7 +124,7 @@ impl GameLoop {
                 ], 
                 PADDLE_SIZE, INITIAL_PADDLE_SPEED,
                 INITIAL_PADDLE_RANGE, 
-                true
+                false
             ),
         };
         a.left_paddle.is_active = true;
@@ -143,7 +151,6 @@ impl GameLoop {
     }
 
     fn check_collisions(self: &mut Self, ball_input: &InputData) {
-        
         // Bounce when hit a paddle
         let hit_paddle = self.left_paddle.hitbox.check_collision_circle_rec(self.ball.position, self.ball.radius + 5.0) ||
                          self.right_paddle.hitbox.check_collision_circle_rec(self.ball.position, self.ball.radius + 5.0);

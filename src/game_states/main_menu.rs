@@ -27,7 +27,7 @@ impl GameState for MainMenu {
         return Box::new(GameLoop::new());
     }
 
-    fn update(&mut self, rl: &RaylibHandle) {
+    fn update(self: &mut Self, rl: &RaylibHandle) {
         let mouse_pos = rl.get_mouse_position();
 
         // Update buttons

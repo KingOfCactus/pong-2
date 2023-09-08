@@ -5,10 +5,8 @@ use crate::game_objects::*;
 
 
 impl GameObject for Paddle {
-    fn update(&mut self, rl: &RaylibHandle) {
-        let input = self.player_data.get_input(&rl);
-        
-        self.update_velocity(&input);
+    fn update(&mut self, rl: &RaylibHandle, input: &InputData) {        
+        self.update_velocity(input);
         self.update_color(&rl);
         self.translate(rl);
     }
@@ -22,8 +20,6 @@ impl Paddle {
                         colors, view_range, position, speed, size, color: colors[0],
                         hitbox: Rectangle::new(position.x, position.y, size.x, size.y),
                         velocity: 0.0, player_pos: Vector2::zero(), 
-                        player_data: PlayerData::new(1, Box::new(KeyboardInput::new()), 7.0, false) 
-                        // player_data: PlayerData::new(1, Box::new(GamepadInput::new(0, true)), 7.0, false) 
                     }
     }
 

@@ -13,7 +13,7 @@ pub const PADDLE_SIZE: Vector2 = Vector2 { x: 11.0, y: 65.0 };
 
 // Common trait for GameObjects
 pub trait GameObject {
-    fn update(&mut self, rl: &RaylibHandle);
+    fn update(&mut self, rl: &RaylibHandle, input: &InputData);
 }
 
 
@@ -28,13 +28,11 @@ pub struct Ball {
     pub lives: i32,
 
     pub is_active: bool,
-    pub player_data: PlayerData,
     pub prone_dir : Vector2,
 }
 
 pub struct Paddle {
     pub is_active: bool,
-    pub player_data: PlayerData,
 
     pub speed: f32,
     pub velocity: f32,

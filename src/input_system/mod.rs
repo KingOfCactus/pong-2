@@ -1,6 +1,6 @@
 mod keyboard_input;
 mod gamepad_input;
-mod player_data;
+mod player_input;
 use raylib::prelude::*;
 
 const GAMEPAD_DEADZONE: f32 = 0.15;
@@ -12,12 +12,13 @@ pub struct InputData {
     pub is_down_down: bool,
     pub is_up_down: bool,
     
+    pub sample_time: f64,
     pub raw_dir: Vector2,
     pub dir: Vector2
 }
 
 impl InputData {
-    fn new() -> Self {
+    pub fn new(sample_time: f64) -> Self {
         return Self {
             raw_dir: Vector2::zero(), 
             dir: Vector2::zero(),
@@ -25,6 +26,7 @@ impl InputData {
             is_left_down: false, 
             is_down_down: false, 
             is_up_down: false,
+            sample_time
         }
     }
 }
@@ -35,10 +37,10 @@ pub trait InputDevice {
     fn use_axis(self: &mut Self) -> bool;
 }
 
-pub struct PlayerData {
+pub struct PlayerInput {
     id: i32,
     input_snapness: f32,
-    last_input: InputData,
+    last_data: InputData,
 
     first_input_socd: bool,
     device: Box<dyn InputDevice>,

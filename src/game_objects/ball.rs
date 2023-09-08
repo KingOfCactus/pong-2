@@ -4,11 +4,9 @@ use crate::utils::*;
 use crate::game_objects::*;
 
 impl GameObject for Ball{
-    fn update(&mut self, rl: &RaylibHandle) {
-        let input = self.player_data.get_input(&rl);
-
-        self.update_velocity(&input);
-        self.update_color(rl, &input);
+    fn update(&mut self, rl: &RaylibHandle, input: &InputData) {
+        self.update_velocity(input);
+        self.update_color(rl, input);
         self.translate(rl);
     }
 }
@@ -22,8 +20,6 @@ impl Ball {
                 velocity: Vector2::zero(), 
                 prone_dir: Vector2::zero(),
                 position, radius, speed, colors,
-                player_data: PlayerData::new(0, Box::new(GamepadInput::new(0, true)), 3.0, true) 
-                // player_data: PlayerData::new(0, Box::new(KeyboardInput::new()), 3.0, true)
             }
     }
 

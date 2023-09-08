@@ -1,13 +1,18 @@
 use super::*;
 
-impl PlayerData {
-    pub fn get_last_input(&mut self) -> InputData {
-        return self.last_input;
+impl PlayerInput {
+    pub fn get_data(self: &mut Self, rl: &RaylibHandle) -> InputData {
+        // Update data if wasn't already this frame
+        if self.last_data.sample_time != rl.get_time() {
+            self.last_data = self.read_data(&rl)
+        }
+
+        return self.last_data;
     }
 
-    pub fn get_input(self: &mut Self, rl: &RaylibHandle) -> InputData {
-        let mut data = InputData::new();
-        let last_dir = self.last_input.dir;
+    fn read_data(self: &mut Self, rl: &RaylibHandle) -> InputData {
+        let mut data = InputData::new(rl.get_time());
+        let last_dir = self.last_data.dir;
 
         // Get buttons
         let buttons = self.device.get_buttons(&rl);
@@ -17,17 +22,11 @@ impl PlayerData {
         data.is_up_down = buttons[3];
 
         // Get raw direction
-        if self.device.use_axis() { 
-            data.raw_dir = self.device.get_axis(&rl);
-        }
-        else {
-            data.raw_dir = self.buttons_to_dir(&buttons);
-        }
+        if self.device.use_axis() { data.raw_dir = self.device.get_axis(&rl); }
+        else { data.raw_dir = self.buttons_to_dir(&buttons); }
 
         // Smooth raw direction to dir
         data.dir = last_dir.lerp(data.raw_dir, self.input_snapness * rl.get_frame_time());
-
-        self.last_input = data;
         return data;
     }
 
@@ -70,7 +69,7 @@ impl PlayerData {
         return Self { 
             id: player_id, 
             input_snapness: snapness, 
-            last_input: InputData::new(), 
+            last_data: InputData::new(0.0), 
             first_input_socd: use_first_input, 
             device: device
         }
