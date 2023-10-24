@@ -70,13 +70,14 @@ impl GameScene for GameLoop {
 }
 
 impl GameLoop {
-    pub fn new() -> GameLoop {
+    pub fn new(selected_mode: GameMode) -> GameLoop {
        return GameLoop {
             score: 0,
             checkpoint: 0,
             respawn_timer: 0.0,
 
             hiscore: get_highscore(),
+            game_mode: selected_mode,
             score_color: Color::DARKGREEN,
 
             is_active: true,
@@ -109,9 +110,8 @@ impl GameLoop {
                     Color::new(255, 105, 97, 130), // Player is far - #FF6961
                     Color::new(255, 40, 0, 130)    // Player is close - #FF2800
                 ],
-                PADDLE_SIZE, INITIAL_PADDLE_SPEED,
-                INITIAL_PADDLE_RANGE, 
-                false, true
+                PADDLE_SIZE, INITIAL_PADDLE_SPEED,INITIAL_PADDLE_RANGE, 
+                selected_mode == GameMode::Multiplayer, true
             ), 
 
             right_paddle: Paddle::new(
@@ -122,9 +122,8 @@ impl GameLoop {
                     Color::new(255, 105, 97, 130), // Player is far - #FF6961
                     Color::new(255, 40, 0, 130)    // Player is close - #FF2800
                 ], 
-                PADDLE_SIZE, INITIAL_PADDLE_SPEED,
-                INITIAL_PADDLE_RANGE, 
-                false, false
+                PADDLE_SIZE, INITIAL_PADDLE_SPEED, INITIAL_PADDLE_RANGE, 
+                selected_mode == GameMode::Multiplayer, false
             ),
         };
     }

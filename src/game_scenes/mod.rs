@@ -6,6 +6,9 @@ use crate::{game_objects::*, input_system::PlayerInput};
 
 use self::main_menu::*;
 
+#[derive(Clone, Copy, PartialEq)]
+pub enum GameMode { Singleplayer, Multiplayer }
+
 pub trait GameScene {
     fn is_active(&self) -> bool;
     fn get_next_scene(&self) -> Box<dyn GameScene>;
@@ -30,14 +33,18 @@ pub struct GameLoop {
     players_input: Vec<PlayerInput>,
 
     is_active: bool,
-    debug_mode: bool
+    debug_mode: bool,
+    game_mode: GameMode,
 }
 
 pub struct MainMenu {
     title: Text,
-    singleplayer: Button,
-    quit: Button,
     hiscore: Text,
-    
+
+    singleplayer: Button,
+    multiplayer: Button,
+    quit: Button,
+
+    selected_mode: GameMode,
     is_active: bool
 }

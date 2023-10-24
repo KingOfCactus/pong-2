@@ -24,7 +24,7 @@ impl GameScene for MainMenu {
     }
 
     fn get_next_scene(&self) -> Box<dyn GameScene> {
-        return Box::new(GameLoop::new());
+        return Box::new(GameLoop::new(self.selected_mode));
     }
 
     fn update(self: &mut Self, rl: &RaylibHandle) {
@@ -32,6 +32,7 @@ impl GameScene for MainMenu {
 
         // Update buttons
         self.singleplayer.focused = self.singleplayer.rect.check_collision_point_rec(mouse_pos);
+        self.multiplayer.focused = self.multiplayer.rect.check_collision_point_rec(mouse_pos);
         self.quit.focused = self.quit.rect.check_collision_point_rec(mouse_pos);
 
         // Exit if mouse isn't clicking
@@ -39,8 +40,9 @@ impl GameScene for MainMenu {
             return;
         }
 
-        if self.singleplayer.focused { self.on_click_play() }
-        if self.quit.focused { println!("Quit") }
+        if self.singleplayer.focused { self.start_game(false) }
+        if self.multiplayer.focused { self.start_game(true) }
+        if self.quit.focused { self.quit() }
     }
 
     fn draw(&mut self, rl: &mut RaylibHandle, thread: &RaylibThread) {
@@ -48,32 +50,44 @@ impl GameScene for MainMenu {
         let mut draw_handle = rl.begin_drawing(thread);
         draw_handle.clear_background(Color::BLACK);
 
-        // Top
+        // Draw title
         draw_handle.draw_text(&self.title.text, self.title.pos.x as i32, self.title.pos.y as i32, self.title.size, self.title.color);
 
-        // Middle
-        // draw_handle.draw_rectangle_rec(&self.singleplayer.rect, Color::GRAY);
+        // Singleplayer button
+        // 'hitbox' --- draw_handle.draw_rectangle_rec(&self.singleplayer.rect, Color::GRAY);
         draw_handle.draw_text(&self.singleplayer.text, self.singleplayer.pos.x as i32, self.singleplayer.pos.y as i32,
                               20 as i32, if self.singleplayer.focused {HOVERING_BTN_COLOR} else {BTN_COLOR});
+        
+        // Multiplayer button
+        // 'hitbox' --- draw_handle.draw_rectangle_rec(&self.multiplayer.rect, Color::GRAY);
+        draw_handle.draw_text(&self.multiplayer.text, self.multiplayer.pos.x as i32, self.multiplayer.pos.y as i32,
+                              20 as i32, if self.multiplayer.focused {HOVERING_BTN_COLOR} else {BTN_COLOR});
 
-        // draw_handle.draw_rectangle_rec(&self.quit.rect, Color::GRAY);
+        // Quit button
+        // 'hitbox' --- draw_handle.draw_rectangle_rec(&self.quit.rect, Color::GRAY);
         draw_handle.draw_text(&self.quit.text, self.quit.pos.x as i32, self.quit.pos.y as i32,
-            20 as i32, if self.quit.focused {HOVERING_BTN_COLOR} else {BTN_COLOR});
+                              20 as i32, if self.quit.focused {HOVERING_BTN_COLOR} else {BTN_COLOR});
 
-        // Bottom
+        // Highscore text
         draw_handle.draw_text(&self.hiscore.text, self.hiscore.pos.x as i32, self.hiscore.pos.y as i32, self.hiscore.size as i32, self.hiscore.color);
     }
 }
 
 impl MainMenu {
-    fn on_click_play(self: &mut Self) {
+    fn start_game(self: &mut Self, selected_multiplayer: bool) {
+        if selected_multiplayer {
+            self.selected_mode = GameMode::Multiplayer;
+        }
+
         self.is_active = false;
+    }
+
+    fn quit(self: &mut Self) {
+        todo!("Implement this");
     }
 
     pub fn new() -> MainMenu {
         return MainMenu {
-            is_active: true,
-
             title: Text {
                 text: "Pong 2: The Enemy is Now Another".to_string(),
                 color: Color::GOLD,
@@ -99,6 +113,20 @@ impl MainMenu {
                 )
             },
             
+            multiplayer: Button {
+                text: "Multiplayer".to_string(),
+                pos: Vector2 {
+                    x: SCREEN_SIZE.x / 2.0 - measure_text("Multiplayer", 20) as f32 / 2.0,
+                    y: SCREEN_SIZE.y * 0.5
+                },
+
+                focused: false,
+                rect: Rectangle::new (
+                    SCREEN_SIZE.x / 2.0 as f32 - (measure_text("Multiplayer", 20) + 30) as f32 / 2.0, 
+                    SCREEN_SIZE.y * 0.5 - 10.0, measure_text("Multiplayer", 20) as f32 + 30.0, 40.0
+                )
+            },
+
             quit: Button {
                 focused: false,
                 pos: Vector2 {
@@ -123,6 +151,9 @@ impl MainMenu {
                     y: SCREEN_SIZE.y * 0.95 
                 }
             },
+
+            is_active: true,
+            selected_mode: GameMode::Singleplayer,
         }                
     }
 }
