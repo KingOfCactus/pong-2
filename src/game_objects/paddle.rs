@@ -13,16 +13,6 @@ impl GameObject for Paddle {
 }
 
 impl Paddle {
-    pub fn new( position: Vector2, colors: [Color; 2], size: Vector2,  
-                speed : f32, view_range: f32, player_controlled: bool) -> Paddle {
-                    return Paddle { 
-                        is_active: false, player_controlled, 
-                        colors, view_range, position, speed, size, color: colors[0],
-                        hitbox: Rectangle::new(position.x, position.y, size.x, size.y),
-                        velocity: 0.0, player_pos: Vector2::zero(), 
-                    }
-    }
-
     fn update_color(&mut self, rl: &RaylibHandle) {
         if !self.player_controlled { return; }
         let closeness = self.get_player_pos_closeness();
@@ -89,5 +79,15 @@ impl Paddle {
         let view_distance = SCREEN_SIZE.x * self.view_range;
         let distance = self.player_pos.x - (self.position.x);
         return 1.0 - (distance / view_distance * distance.signum()).clamp(0.0, 1.0);
+    }
+
+    pub fn new( position: Vector2, colors: [Color; 2], size: Vector2, speed : f32, 
+        view_range: f32, player_controlled: bool, start_active: bool) -> Paddle {
+            return Paddle { 
+                is_active: start_active, player_controlled, 
+                colors, view_range, position, speed, size, color: colors[0],
+                hitbox: Rectangle::new(position.x, position.y, size.x, size.y),
+                velocity: 0.0, player_pos: Vector2::zero(), 
+            }
     }
 }

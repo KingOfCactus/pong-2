@@ -1,12 +1,16 @@
 use super::*;
 
 impl PlayerInput {
+    pub fn override_last_dir(self: &mut Self, new_dir: Vector2) {
+        self.last_data.dir = new_dir;
+    }
+    
     pub fn get_data(self: &mut Self, rl: &RaylibHandle) -> InputData {
         // Update data if wasn't already this frame
         if self.last_data.sample_time != rl.get_time() {
             self.last_data = self.read_data(&rl)
         }
-
+        
         return self.last_data;
     }
 

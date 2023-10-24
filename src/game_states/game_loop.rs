@@ -71,7 +71,7 @@ impl GameState for GameLoop {
 
 impl GameLoop {
     pub fn new() -> GameLoop {
-        let mut a = GameLoop {
+       return GameLoop {
             score: 0,
             checkpoint: 0,
             respawn_timer: 0.0,
@@ -86,7 +86,7 @@ impl GameLoop {
             players_input: vec![
                 // Player 1
                 // PlayerInput::new(0, Box::new(GamepadInput::new(0, true)), 3.0, true),
-                PlayerInput::new(0, Box::new(KeyboardInput::new(false)), 3.0, true),
+                PlayerInput::new(0, Box::new(KeyboardInput::new(true)), 3.0, true),
 
                 // Player 2
                 // PlayerInput::new(1, Box::new(KeyboardInput::new()), 7.0, false),
@@ -111,7 +111,7 @@ impl GameLoop {
                 ],
                 PADDLE_SIZE, INITIAL_PADDLE_SPEED,
                 INITIAL_PADDLE_RANGE, 
-                false
+                false, true
             ), 
 
             right_paddle: Paddle::new(
@@ -124,13 +124,9 @@ impl GameLoop {
                 ], 
                 PADDLE_SIZE, INITIAL_PADDLE_SPEED,
                 INITIAL_PADDLE_RANGE, 
-                false
+                false, false
             ),
         };
-        a.left_paddle.is_active = true;
-        return a;
-
-        todo!("Fix this ugly hack");
     }
 
     fn get_debug_info(self: &Self) -> String {
@@ -179,7 +175,7 @@ impl GameLoop {
             self.ball.prone_dir.x *= -1.0;
             self.ball.prone_dir.y = new_angle;
            
-            // ball_input.dir = Vector2::zero();
+            self.players_input[0].override_last_dir(Vector2::zero());
             
             self.left_paddle.is_active = !self.left_paddle.is_active;
             self.right_paddle.is_active = !self.right_paddle.is_active;
@@ -197,12 +193,11 @@ impl GameLoop {
             self.ball.prone_dir.y = new_angle;
             self.bounced_vertically = true;
 
-            // ball_input.dir.x *= 0.5;
-            // ball_input.dir.y = 0.0;
+            let new_dir = Vector2::new(ball_input.dir.x * 0.5, 0.0);
+            self.players_input[0].override_last_dir(new_dir);
         }
 
         return;
-        todo!("Made so that the ball input dir interlation can be modified again");
     }
 
     fn respawn_player(self: &mut Self, rl: &RaylibHandle) {
@@ -215,7 +210,7 @@ impl GameLoop {
         self.left_paddle.position.y =  SCREEN_SIZE.y / 2.0 - PADDLE_SIZE.y / 2.0;
         self.right_paddle.position.y =  SCREEN_SIZE.y / 2.0 - PADDLE_SIZE.y / 2.0;
 
-        // self.ball.input.dir = Vector2::zero();
+        self.players_input[0].override_last_dir(Vector2::zero());
         self.ball.prone_dir = Vector2 { x: -1.0, y: 0.0 };
         
         // Check for a new highscore
