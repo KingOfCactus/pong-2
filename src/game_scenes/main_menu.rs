@@ -18,12 +18,12 @@ pub struct Button {
     focused: bool,
 }
 
-impl GameState for MainMenu {
+impl GameScene for MainMenu {
     fn is_active(&self) -> bool {
         return self.is_active;
     }
 
-    fn get_next_state(&self) -> Box<dyn GameState> {
+    fn get_next_scene(&self) -> Box<dyn GameScene> {
         return Box::new(GameLoop::new());
     }
 

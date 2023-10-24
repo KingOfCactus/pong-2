@@ -6,9 +6,9 @@ use crate::{game_objects::*, input_system::PlayerInput};
 
 use self::main_menu::*;
 
-pub trait GameState {
+pub trait GameScene {
     fn is_active(&self) -> bool;
-    fn get_next_state(&self) -> Box<dyn GameState>;
+    fn get_next_scene(&self) -> Box<dyn GameScene>;
     
     fn update(&mut self, rl: &RaylibHandle);
     fn draw(&mut self, rl: &mut RaylibHandle, thread: &RaylibThread); // Needs to be the last called method, since it drops the RaylibHandle

@@ -4,10 +4,10 @@ use raylib::ffi::KeyboardKey::*;
 
 use crate::input_system::*;
 use crate::utils::*;
-use crate::game_states::*;
+use crate::game_scenes::*;
 use crate::game_objects::*;
 
-impl GameState for GameLoop {
+impl GameScene for GameLoop {
     fn update(self: &mut Self, rl: &RaylibHandle){
         let ball_input = self.players_input[0].get_data(rl);
         let paddle_input = self.players_input[1].get_data(rl);
@@ -66,7 +66,7 @@ impl GameState for GameLoop {
     }
 
     fn is_active(&self) -> bool { return self.is_active; }
-    fn get_next_state(&self) -> Box<dyn GameState> { return Box::new(MainMenu::new()); }
+    fn get_next_scene(&self) -> Box<dyn GameScene> { return Box::new(MainMenu::new()); }
 }
 
 impl GameLoop {
@@ -142,8 +142,6 @@ impl GameLoop {
         // return stats;
 
         todo!("Fix this and made so that every localplayer information in show");
-        return "".to_string();
-
     }
 
     fn check_collisions(self: &mut Self, ball_input: &InputData) {
