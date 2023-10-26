@@ -14,7 +14,10 @@ impl GameObject for Paddle {
 
 impl Paddle {
     fn update_color(&mut self, rl: &RaylibHandle) {
-        if !self.player_controlled { return; }
+        if !self.player_controlled { 
+            self.color = Color::GRAY;
+            return; 
+        }
         let closeness = self.get_player_pos_closeness();
 
         let mut alpha = self.color.a as f32;
