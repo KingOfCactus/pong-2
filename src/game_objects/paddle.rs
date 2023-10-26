@@ -71,7 +71,7 @@ impl Paddle {
     // Rust compiler don't let me name it move() >:(
     fn translate(&mut self, rl: &RaylibHandle) {
         self.position.y += self.velocity * rl.get_frame_time();
-        self.position.y = self.position.y.clamp(0.0, SCREEN_SIZE.y);
+        self.position.y = self.position.y.clamp(10.0, SCREEN_SIZE.y - self.size.y - 10.0);
 
         self.hitbox.x = self.position.x;
         self.hitbox.y = self.position.y;
