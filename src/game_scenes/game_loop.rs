@@ -183,8 +183,9 @@ impl GameLoop {
 
         // Bounce when hit top or bottom screen
         if self.ball.position.y == self.ball.radius || self.ball.position.y == SCREEN_SIZE.y - self.ball.radius {
-            let mut new_angle = self.ball.prone_dir.y.abs();
-            new_angle = new_angle.clamp(0.6, 1.0);
+            let mut new_angle = self.ball.velocity.normalized().y.abs().powf(1.5);
+            new_angle = new_angle.clamp(0.3, 0.6);
+            println!("{} --> {} --> {}", self.ball.velocity.normalized().y.abs(), self.ball.velocity.normalized().y.abs().powf(1.5), new_angle);
 
             new_angle *= -self.ball.prone_dir.y.signum();
             self.ball.prone_dir.y = new_angle;
@@ -264,19 +265,19 @@ impl GameLoop {
                 self.score_color = Color::YELLOW;
                 self.ball.speed = MAX_PLAYER_SPEED * 0.85;
 
-                self.left_paddle.speed = INITIAL_PADDLE_SPEED * 0.74;
-                self.right_paddle.speed = INITIAL_PADDLE_SPEED * 0.74;
-                self.left_paddle.view_range = INITIAL_PADDLE_RANGE * 0.9;
-                self.right_paddle.view_range = INITIAL_PADDLE_RANGE * 0.9;
+                self.left_paddle.speed = INITIAL_PADDLE_SPEED * 0.7;
+                self.right_paddle.speed = INITIAL_PADDLE_SPEED * 0.7;
+                self.left_paddle.view_range = INITIAL_PADDLE_RANGE * 0.8;
+                self.right_paddle.view_range = INITIAL_PADDLE_RANGE * 0.8;
             },
 
             50 => {
                 self.checkpoint = 50;
                 self.score_color = Color::GOLD;
-                self.ball.speed = MAX_PLAYER_SPEED * 0.95;
+                self.ball.speed = MAX_PLAYER_SPEED * 0.90;
 
-                self.left_paddle.speed = INITIAL_PADDLE_SPEED * 0.7;
-                self.right_paddle.speed = INITIAL_PADDLE_SPEED * 0.7;
+                self.left_paddle.speed = INITIAL_PADDLE_SPEED * 0.6;
+                self.right_paddle.speed = INITIAL_PADDLE_SPEED * 0.6;
                 self.left_paddle.view_range = INITIAL_PADDLE_RANGE * 0.75;
                 self.right_paddle.view_range = INITIAL_PADDLE_RANGE * 0.75;
             }
@@ -285,10 +286,10 @@ impl GameLoop {
                 self.checkpoint = 75;
                 self.score_color = Color::RED;
                 self.ball.speed = MAX_PLAYER_SPEED;
-                self.left_paddle.speed = INITIAL_PADDLE_SPEED * 0.55;
-                self.right_paddle.speed = INITIAL_PADDLE_SPEED * 0.55;
-                self.left_paddle.view_range = INITIAL_PADDLE_RANGE * 0.7;
-                self.right_paddle.view_range = INITIAL_PADDLE_RANGE * 0.7;
+                self.left_paddle.speed = INITIAL_PADDLE_SPEED * 0.5;
+                self.right_paddle.speed = INITIAL_PADDLE_SPEED * 0.5;
+                self.left_paddle.view_range = INITIAL_PADDLE_RANGE * 0.6;
+                self.right_paddle.view_range = INITIAL_PADDLE_RANGE * 0.6;
             } 
             _=> {},
         }
