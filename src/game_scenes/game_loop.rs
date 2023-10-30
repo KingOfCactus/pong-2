@@ -37,7 +37,7 @@ impl GameScene for GameLoop {
         // Update paddles
         self.left_paddle.update(&rl, &paddle_input);
         self.right_paddle.update(&rl, &paddle_input);
-        self.check_collisions(&ball_input);
+        self.check_ball_collisions(&ball_input);
     }
 
     fn draw(&mut self, rl: &mut RaylibHandle, thread: &RaylibThread){
@@ -70,134 +70,64 @@ impl GameScene for GameLoop {
 }
 
 impl GameLoop {
-    pub fn new(selected_mode: GameMode) -> GameLoop {
-       return GameLoop {
-            score: 0,
-            checkpoint: 0,
-            respawn_timer: 0.0,
-
-            hiscore: get_highscore(),
-            game_mode: selected_mode,
-            score_color: Color::DARKGREEN,
-
-            is_active: true,
-            debug_mode: false,
-            bounced_vertically: false,
-            
-            players_input: vec![
-                // Player 1
-                // PlayerInput::new(0, Box::new(GamepadInput::new(0, true)), 3.0, true),
-                PlayerInput::new(0, Box::new(KeyboardInput::new(true)), 3.0, true),
-
-                // Player 2
-                // PlayerInput::new(1, Box::new(KeyboardInput::new()), 7.0, false),
-                PlayerInput::new(1, Box::new(GamepadInput::new(0, true)), 7.0, false) 
-            ],
-            
-            ball: Ball::new(
-                Vector2::new(SCREEN_SIZE.x * 0.5, SCREEN_SIZE.y * 0.5), [
-                    Color::new(188, 212, 230, 150), // 1 live - #BCD4E6
-                    Color::new(137, 207, 240, 150), // 2 lives - #89CFF0
-                    Color::new(10, 255, 255, 150)   // 3 lives - #6CB4EE
-                ], 10.8, MAX_PLAYER_SPEED * 0.63
-            ),
-
-            left_paddle: Paddle::new(
-                Vector2 { 
-                    x: PADDLE_PADDING, 
-                    y: SCREEN_SIZE.y / 2.0 - PADDLE_SIZE.y / 2.0 
-                }, [
-                    Color::new(255, 105, 97, 130), // Player is far - #FF6961
-                    Color::new(255, 40, 0, 130)    // Player is close - #FF2800
-                ],
-                PADDLE_SIZE, INITIAL_PADDLE_SPEED,INITIAL_PADDLE_RANGE, 
-                selected_mode == GameMode::Multiplayer, true
-            ), 
-
-            right_paddle: Paddle::new(
-                Vector2 { 
-                    x: SCREEN_SIZE.x - PADDLE_SIZE.x - PADDLE_PADDING, 
-                    y: SCREEN_SIZE.y / 2.0 - PADDLE_SIZE.y / 2.0 
-                }, [
-                    Color::new(255, 105, 97, 130), // Player is far - #FF6961
-                    Color::new(255, 40, 0, 130)    // Player is close - #FF2800
-                ], 
-                PADDLE_SIZE, INITIAL_PADDLE_SPEED, INITIAL_PADDLE_RANGE, 
-                selected_mode == GameMode::Multiplayer, false
-            ),
-        };
+    fn check_ball_collisions(self: &mut Self, ball_input: &InputData) {
+        let hit_vertical_edge = self.ball.position.y == self.ball.radius || self.ball.position.y == SCREEN_SIZE.y - self.ball.radius;
+        let hit_paddle = self.right_paddle.hitbox.check_collision_circle_rec(self.ball.position, self.ball.radius + 5.0) ||
+                         self.left_paddle.hitbox.check_collision_circle_rec(self.ball.position, self.ball.radius + 5.0);
+        
+        if hit_paddle { self.paddle_bounce(ball_input); }
+        if hit_vertical_edge { self.edge_bounce(ball_input); }
     }
 
-    fn get_debug_info(self: &Self) -> String {
-        // let mut stats = format!("- Prone: ({:.2}, {:.2}) \n- Move: ({:.2}, {:.2}\n", 
-        //                 self.ball.prone_dir.x, self.ball.prone_dir.y, 
-        //                 ball_input.dir.x, ball_input.dir.y);
+    // Bounce ball when hit top or bottom screen
+    fn edge_bounce(self: &mut Self, ball_input: &InputData) {
+        let mut new_angle = self.ball.velocity.normalized().y.abs().powf(1.5);
+        new_angle = new_angle.clamp(0.3, 0.6);
+        println!("{} --> {} --> {}", self.ball.velocity.normalized().y.abs(), self.ball.velocity.normalized().y.abs().powf(1.5), new_angle);
+
+        new_angle *= -self.ball.prone_dir.y.signum();
+        self.ball.prone_dir.y = new_angle;
+        self.bounced_vertically = true;
+
+        let new_dir = Vector2::new(ball_input.dir.x * 0.5, 0.0);
+        self.players_input[0].override_last_dir(new_dir);
+    }
+
+    // Bounce ball when hits a paddle
+    fn paddle_bounce(self: &mut Self, ball_input: &InputData)
+    {
+        let mut new_angle: f32 = thread_rng().gen_range(0.65..1.0);
+
+        // Copy ball.input direction or keep previous direction 
+        if self.bounced_vertically || ball_input.raw_dir.y == 0.0 { 
+            new_angle *= self.ball.prone_dir.y.signum();
+        }
+        else { 
+            new_angle *= ball_input.raw_dir.y.signum(); 
+        }
+        
+        // Randomly invert new angle direction when score is above 100
+        if self.score >= 100 && thread_rng().gen_range(0.0..1.0) > 0.65 { new_angle *= -1.0; }
+
+        // Keep ball out of the paddles
+        let min = self.left_paddle.position.x + PADDLE_SIZE.x + self.ball.radius;
+        let max = self.right_paddle.position.x - PADDLE_SIZE.x - self.ball.radius;
+        self.ball.position = self.ball.position.clamp(min, max);
+
+        // Set new direction
+        self.bounced_vertically = false;
+        self.ball.prone_dir.x *= -1.0;
+        self.ball.prone_dir.y = new_angle;
+       
+        self.players_input[0].override_last_dir(Vector2::zero());
+        
+        self.left_paddle.is_active = !self.left_paddle.is_active;
+        self.right_paddle.is_active = !self.right_paddle.is_active;
+
+        self.score += 1;
+        self.update_difficulty();
+    }
     
-        // if ball_input.on_gamepad {
-        //    stats += &format!(" {} \n ({:.2}, {:.2})", input.gamepad_name, 
-        //             input.raw_dir.x, input.raw_dir.y);
-        // }
-        
-        // return stats;
-
-        todo!("Fix this and made so that every localplayer information in show");
-    }
-
-    fn check_collisions(self: &mut Self, ball_input: &InputData) {
-        // Bounce when hit a paddle
-        let hit_paddle = self.left_paddle.hitbox.check_collision_circle_rec(self.ball.position, self.ball.radius + 5.0) ||
-                         self.right_paddle.hitbox.check_collision_circle_rec(self.ball.position, self.ball.radius + 5.0);
-        
-        if hit_paddle {
-            let mut new_angle: f32 = thread_rng().gen_range(0.65..1.0);
-
-            // Copy ball.input direction or keep previous direction 
-            if self.bounced_vertically || ball_input.raw_dir.y == 0.0 { 
-                new_angle *= self.ball.prone_dir.y.signum();
-            }
-            else { 
-                new_angle *= ball_input.raw_dir.y.signum(); 
-            }
-            
-            // Randomly invert new angle direction when score is above 100
-            if self.score >= 100 && thread_rng().gen_range(0.0..1.0) > 0.65 { new_angle *= -1.0; }
-
-            // Keep ball out of the paddles
-            let min = self.left_paddle.position.x + PADDLE_SIZE.x + self.ball.radius;
-            let max = self.right_paddle.position.x - PADDLE_SIZE.x - self.ball.radius;
-            self.ball.position = self.ball.position.clamp(min, max);
-
-            // Set new direction
-            self.bounced_vertically = false;
-            self.ball.prone_dir.x *= -1.0;
-            self.ball.prone_dir.y = new_angle;
-           
-            self.players_input[0].override_last_dir(Vector2::zero());
-            
-            self.left_paddle.is_active = !self.left_paddle.is_active;
-            self.right_paddle.is_active = !self.right_paddle.is_active;
-
-            self.score += 1;
-            self.update_difficulty();
-        }
-
-        // Bounce when hit top or bottom screen
-        if self.ball.position.y == self.ball.radius || self.ball.position.y == SCREEN_SIZE.y - self.ball.radius {
-            let mut new_angle = self.ball.velocity.normalized().y.abs().powf(1.5);
-            new_angle = new_angle.clamp(0.3, 0.6);
-            println!("{} --> {} --> {}", self.ball.velocity.normalized().y.abs(), self.ball.velocity.normalized().y.abs().powf(1.5), new_angle);
-
-            new_angle *= -self.ball.prone_dir.y.signum();
-            self.ball.prone_dir.y = new_angle;
-            self.bounced_vertically = true;
-
-            let new_dir = Vector2::new(ball_input.dir.x * 0.5, 0.0);
-            self.players_input[0].override_last_dir(new_dir);
-        }
-
-        return;
-    }
-
     fn respawn_player(self: &mut Self, rl: &RaylibHandle) {
         // Wait for 1 second
         self.respawn_timer += rl.get_frame_time();
@@ -238,7 +168,80 @@ impl GameLoop {
         self.update_difficulty();
     }
 
-    fn update_difficulty(self: &mut Self) {
+    fn get_debug_info(self: &Self) -> String {
+        // let mut stats = format!("- Prone: ({:.2}, {:.2}) \n- Move: ({:.2}, {:.2}\n", 
+        //                 self.ball.prone_dir.x, self.ball.prone_dir.y, 
+        //                 ball_input.dir.x, ball_input.dir.y);
+    
+        // if ball_input.on_gamepad {
+        //    stats += &format!(" {} \n ({:.2}, {:.2})", input.gamepad_name, 
+        //             input.raw_dir.x, input.raw_dir.y);
+        // }
+        
+        // return stats;
+
+        todo!("Fix this and made so that every localplayer information in show");
+    }
+    
+    pub fn new(selected_mode: GameMode) -> GameLoop {
+        return GameLoop {
+             score: 0,
+             checkpoint: 0,
+             respawn_timer: 0.0,
+ 
+             hiscore: get_highscore(),
+             game_mode: selected_mode,
+             score_color: Color::DARKGREEN,
+ 
+             is_active: true,
+             debug_mode: false,
+             bounced_vertically: false,
+             
+             players_input: vec![
+                 // Player 1
+                 // PlayerInput::new(0, Box::new(GamepadInput::new(0, true)), 3.0, true),
+                 PlayerInput::new(0, Box::new(KeyboardInput::new(true)), 3.0, true),
+ 
+                 // Player 2
+                 // PlayerInput::new(1, Box::new(KeyboardInput::new()), 7.0, false),
+                 PlayerInput::new(1, Box::new(GamepadInput::new(0, true)), 7.0, false) 
+             ],
+             
+             ball: Ball::new(
+                 Vector2::new(SCREEN_SIZE.x * 0.5, SCREEN_SIZE.y * 0.5), [
+                     Color::new(188, 212, 230, 150), // 1 live - #BCD4E6
+                     Color::new(137, 207, 240, 150), // 2 lives - #89CFF0
+                     Color::new(10, 255, 255, 150)   // 3 lives - #6CB4EE
+                 ], 10.8, MAX_PLAYER_SPEED * 0.63
+             ),
+ 
+             left_paddle: Paddle::new(
+                 Vector2 { 
+                     x: PADDLE_PADDING, 
+                     y: SCREEN_SIZE.y / 2.0 - PADDLE_SIZE.y / 2.0 
+                 }, [
+                     Color::new(255, 105, 97, 130), // Player is far - #FF6961
+                     Color::new(255, 40, 0, 130)    // Player is close - #FF2800
+                 ],
+                 PADDLE_SIZE, INITIAL_PADDLE_SPEED,INITIAL_PADDLE_RANGE, 
+                 selected_mode == GameMode::Multiplayer, true
+             ), 
+ 
+             right_paddle: Paddle::new(
+                 Vector2 { 
+                     x: SCREEN_SIZE.x - PADDLE_SIZE.x - PADDLE_PADDING, 
+                     y: SCREEN_SIZE.y / 2.0 - PADDLE_SIZE.y / 2.0 
+                 }, [
+                     Color::new(255, 105, 97, 130), // Player is far - #FF6961
+                     Color::new(255, 40, 0, 130)    // Player is close - #FF2800
+                 ], 
+                 PADDLE_SIZE, INITIAL_PADDLE_SPEED, INITIAL_PADDLE_RANGE, 
+                 selected_mode == GameMode::Multiplayer, false
+             ),
+         };
+     }
+
+     fn update_difficulty(self: &mut Self) {
         match self.score {
             0 => {
                 self.checkpoint = 0;
