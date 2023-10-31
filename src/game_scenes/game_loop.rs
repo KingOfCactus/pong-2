@@ -81,16 +81,19 @@ impl GameLoop {
 
     // Bounce ball when hit top or bottom screen
     fn edge_bounce(self: &mut Self, ball_input: &InputData) {
-        let mut new_angle = self.ball.velocity.normalized().y.abs().powf(1.5);
-        new_angle = new_angle.clamp(0.3, 0.6);
-        println!("{} --> {} --> {}", self.ball.velocity.normalized().y.abs(), self.ball.velocity.normalized().y.abs().powf(1.5), new_angle);
+        let entry_angle = self.ball.velocity.normalized().y.abs();
 
-        new_angle *= -self.ball.prone_dir.y.signum();
+        // Calculates out angle exponentially
+        let mut new_angle = entry_angle.powf(1.65).clamp(0.35, 0.6);
+        new_angle *= -self.ball.velocity.y.signum();
+
+        // Height down player horizontal input
+        let new_input = Vector2::new(ball_input.dir.x * 0.5, 0.0);
+        self.players_input[0].override_last_dir(new_input);
+
+        // Apply new angle
         self.ball.prone_dir.y = new_angle;
         self.bounced_vertically = true;
-
-        let new_dir = Vector2::new(ball_input.dir.x * 0.5, 0.0);
-        self.players_input[0].override_last_dir(new_dir);
     }
 
     // Bounce ball when hits a paddle
