@@ -84,7 +84,7 @@ impl GameLoop {
         let entry_angle = self.ball.velocity.normalized().y.abs();
 
         // Calculates out angle exponentially
-        let mut new_angle = entry_angle.powf(1.65).clamp(0.35, 0.6);
+        let mut new_angle = entry_angle.powf(1.65).clamp(0.4, 0.65);
         new_angle *= -self.ball.velocity.y.signum();
 
         // Height down player horizontal input
@@ -99,11 +99,19 @@ impl GameLoop {
     // Bounce ball when hits a paddle
     fn paddle_bounce(self: &mut Self, ball_input: &InputData)
     {
-        let mut new_angle: f32 = thread_rng().gen_range(0.65..1.0);
+        let close_to_edge = self.ball.position.y <= self.ball.radius + 73.0  ||
+                            self.ball.position.y >= SCREEN_SIZE.y - self.ball.radius - 73.0;
+        
+        let mut new_angle: f32 = thread_rng().gen_range(0.45..1.0);
+        if close_to_edge { new_angle *= 1.5; }
+        println!("{}: {}", close_to_edge, new_angle);
 
-        // Copy ball.input direction or keep previous direction 
+        // Decides new angle orientation (up or down) 
         if self.bounced_vertically || ball_input.raw_dir.y == 0.0 { 
             new_angle *= self.ball.prone_dir.y.signum();
+        }
+        else if close_to_edge { 
+            new_angle *= self.ball.prone_dir.y.signum(); 
         }
         else { 
             new_angle *= ball_input.raw_dir.y.signum(); 
