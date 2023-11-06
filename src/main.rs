@@ -19,5 +19,4 @@ fn main() {
         scene.update(&rl);
         scene.draw(&mut rl, &thread);
     }
-
 }

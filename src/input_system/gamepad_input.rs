@@ -24,7 +24,7 @@ impl InputDevice for GamepadInput {
             return [is_right_down, is_left_down, is_down_down, is_up_down];
         }
 
-        // DPad buttons
+        // Use dpads buttons
         let is_right_down = rl.get_gamepad_axis_movement(self.gamepad_id, GAMEPAD_AXIS_LEFT_X) > GAMEPAD_DEADZONE;
         let is_left_down = rl.get_gamepad_axis_movement(self.gamepad_id, GAMEPAD_AXIS_LEFT_X) < -GAMEPAD_DEADZONE;
         let is_down_down = rl.get_gamepad_axis_movement(self.gamepad_id, GAMEPAD_AXIS_LEFT_Y) < -GAMEPAD_DEADZONE;

@@ -1,5 +1,5 @@
-use crate::utils::{SCREEN_SIZE, get_highscore};
 use super::*;
+use crate::utils::{SCREEN_SIZE, get_highscore};
 
 const HOVERING_BTN_COLOR: Color = Color::WHITE;
 const BTN_COLOR: Color = Color::new(150, 150, 150, 255);
@@ -19,14 +19,6 @@ pub struct Button {
 }
 
 impl GameScene for MainMenu {
-    fn is_active(&self) -> bool {
-        return self.is_active;
-    }
-
-    fn get_next_scene(&self) -> Box<dyn GameScene> {
-        return Box::new(GameLoop::new(self.selected_mode));
-    }
-
     fn update(self: &mut Self, rl: &RaylibHandle) {
         let mouse_pos = rl.get_mouse_position();
 
@@ -36,13 +28,11 @@ impl GameScene for MainMenu {
         self.quit.focused = self.quit.rect.check_collision_point_rec(mouse_pos);
 
         // Exit if mouse isn't clicking
-        if !rl.is_mouse_button_pressed(MouseButton::MOUSE_LEFT_BUTTON) {
-            return;
-        }
+        if !rl.is_mouse_button_pressed(MouseButton::MOUSE_LEFT_BUTTON) { return; }
 
-        if self.singleplayer.focused { self.start_game(false) }
-        if self.multiplayer.focused { self.start_game(true) }
-        if self.quit.focused { self.quit() }
+        if self.singleplayer.focused { self.start_game(false); }
+        if self.multiplayer.focused { self.start_game(true); }
+        if self.quit.focused { self.quit(); }
     }
 
     fn draw(&mut self, rl: &mut RaylibHandle, thread: &RaylibThread) {
@@ -51,39 +41,39 @@ impl GameScene for MainMenu {
         draw_handle.clear_background(Color::BLACK);
 
         // Draw title
-        draw_handle.draw_text(&self.title.text, self.title.pos.x as i32, self.title.pos.y as i32, self.title.size, self.title.color);
+        draw_handle.draw_text(&self.title.text, self.title.pos.x as i32, self.title.pos.y as i32, 
+                               self.title.size, self.title.color);
 
-        // Singleplayer button
-        // 'hitbox' --- draw_handle.draw_rectangle_rec(&self.singleplayer.rect, Color::GRAY);
+        // Draw buttons
         draw_handle.draw_text(&self.singleplayer.text, self.singleplayer.pos.x as i32, self.singleplayer.pos.y as i32,
-                              20 as i32, if self.singleplayer.focused {HOVERING_BTN_COLOR} else {BTN_COLOR});
-        
-        // Multiplayer button
-        // 'hitbox' --- draw_handle.draw_rectangle_rec(&self.multiplayer.rect, Color::GRAY);
+                               20 as i32, if self.singleplayer.focused {HOVERING_BTN_COLOR} else {BTN_COLOR});
+
         draw_handle.draw_text(&self.multiplayer.text, self.multiplayer.pos.x as i32, self.multiplayer.pos.y as i32,
-                              20 as i32, if self.multiplayer.focused {HOVERING_BTN_COLOR} else {BTN_COLOR});
-
-        // Quit button
-        // 'hitbox' --- draw_handle.draw_rectangle_rec(&self.quit.rect, Color::GRAY);
+                               20 as i32, if self.multiplayer.focused {HOVERING_BTN_COLOR} else {BTN_COLOR});
+        
         draw_handle.draw_text(&self.quit.text, self.quit.pos.x as i32, self.quit.pos.y as i32,
-                              20 as i32, if self.quit.focused {HOVERING_BTN_COLOR} else {BTN_COLOR});
+                               20 as i32, if self.quit.focused {HOVERING_BTN_COLOR} else {BTN_COLOR});
+    
+        // Draw score text
+        draw_handle.draw_text(&self.hiscore.text, self.hiscore.pos.x as i32, self.hiscore.pos.y as i32, 
+                               self.hiscore.size as i32, self.hiscore.color);
 
-        // Highscore text
-        draw_handle.draw_text(&self.hiscore.text, self.hiscore.pos.x as i32, self.hiscore.pos.y as i32, self.hiscore.size as i32, self.hiscore.color);
+        // // Draw buttons rects
+        // draw_handle.draw_rectangle_rec(&self.singleplayer.rect, Color::GRAY);
+        // draw_handle.draw_rectangle_rec(&self.multiplayer.rect, Color::GRAY);
+        // draw_handle.draw_rectangle_rec(&self.quit.rect, Color::GRAY);
     }
+
+    fn is_active(&self) -> bool { return self.is_active; }
+    fn get_next_scene(&self) -> Box<dyn GameScene> { return Box::new(GameLoop::new(self.selected_mode)); }
 }
 
 impl MainMenu {
+    fn quit(self: &mut Self) { todo!("Implement this") }
+
     fn start_game(self: &mut Self, selected_multiplayer: bool) {
-        if selected_multiplayer {
-            self.selected_mode = GameMode::Multiplayer;
-        }
-
+        if selected_multiplayer { self.selected_mode = GameMode::Multiplayer }
         self.is_active = false;
-    }
-
-    fn quit(self: &mut Self) {
-        todo!("Implement this");
     }
 
     pub fn new() -> MainMenu {

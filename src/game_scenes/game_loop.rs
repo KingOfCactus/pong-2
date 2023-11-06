@@ -84,7 +84,7 @@ impl GameLoop {
         let entry_angle = self.ball.velocity.normalized().y.abs();
 
         // Calculates out angle exponentially
-        let mut new_angle = entry_angle.powf(1.65).clamp(0.4, 0.65);
+        let mut new_angle = entry_angle.powf(1.65).clamp(0.4, 0.55);
         new_angle *= -self.ball.velocity.y.signum();
 
         // Height down player horizontal input
@@ -99,44 +99,36 @@ impl GameLoop {
     // Bounce ball when hits a paddle
     fn paddle_bounce(self: &mut Self, ball_input: &InputData)
     {
-        let close_to_edge = self.ball.position.y <= self.ball.radius + 73.0  ||
-                            self.ball.position.y >= SCREEN_SIZE.y - self.ball.radius - 73.0;
-        
+        let close_to_edge = self.ball.position.y >= SCREEN_SIZE.y - self.ball.radius - 73.0 || 
+                            self.ball.position.y <= self.ball.radius + 73.0;
+
         let mut new_angle: f32 = thread_rng().gen_range(0.45..1.0);
         if close_to_edge { new_angle *= 1.5; }
-        println!("{}: {}", close_to_edge, new_angle);
-
-        // Decides new angle orientation (up or down) 
-        if self.bounced_vertically || ball_input.raw_dir.y == 0.0 { 
+           
+        // Decides new angle signum
+        if close_to_edge || self.bounced_vertically || ball_input.raw_dir.y == 0.0 { 
             new_angle *= self.ball.prone_dir.y.signum();
         }
-        else if close_to_edge { 
-            new_angle *= self.ball.prone_dir.y.signum(); 
-        }
-        else { 
-            new_angle *= ball_input.raw_dir.y.signum(); 
-        }
-        
-        // Randomly invert new angle direction when score is above 100
-        if self.score >= 100 && thread_rng().gen_range(0.0..1.0) > 0.65 { new_angle *= -1.0; }
+        else { new_angle *= ball_input.raw_dir.y.signum(); }
 
-        // Keep ball out of the paddles
+        // Move ball out of the paddles
         let min = self.left_paddle.position.x + PADDLE_SIZE.x + self.ball.radius;
         let max = self.right_paddle.position.x - PADDLE_SIZE.x - self.ball.radius;
         self.ball.position = self.ball.position.clamp(min, max);
 
-        // Set new direction
-        self.bounced_vertically = false;
-        self.ball.prone_dir.x *= -1.0;
-        self.ball.prone_dir.y = new_angle;
-       
-        self.players_input[0].override_last_dir(Vector2::zero());
-        
+        // Update paddles
         self.left_paddle.is_active = !self.left_paddle.is_active;
         self.right_paddle.is_active = !self.right_paddle.is_active;
 
+        // Set new prone_dir
+        self.ball.prone_dir.x *= -1.0;
+        self.ball.prone_dir.y = new_angle;
+        
         self.score += 1;
         self.update_difficulty();
+
+        self.bounced_vertically = false;
+        self.players_input[0].override_last_dir(Vector2::zero());
     }
     
     fn respawn_player(self: &mut Self, rl: &RaylibHandle) {
@@ -279,8 +271,8 @@ impl GameLoop {
                 self.score_color = Color::YELLOW;
                 self.ball.speed = MAX_PLAYER_SPEED * 0.85;
 
-                self.left_paddle.speed = INITIAL_PADDLE_SPEED * 0.7;
-                self.right_paddle.speed = INITIAL_PADDLE_SPEED * 0.7;
+                self.left_paddle.speed = INITIAL_PADDLE_SPEED * 0.735;
+                self.right_paddle.speed = INITIAL_PADDLE_SPEED * 0.735;
                 self.left_paddle.view_range = INITIAL_PADDLE_RANGE * 0.8;
                 self.right_paddle.view_range = INITIAL_PADDLE_RANGE * 0.8;
             },
