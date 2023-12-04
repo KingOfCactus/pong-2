@@ -18,27 +18,81 @@ pub struct Button {
     focused: bool,
 }
 
+impl Text {
+    pub fn new(text: &str, relative_pos: Vector2, color: Color, size: i32,) -> Text {
+        Text {
+            pos: Vector2 { 
+                x: SCREEN_SIZE.x * relative_pos.x - measure_text(text, size) as f32 / 2.0,
+                y: SCREEN_SIZE.y * relative_pos.y 
+            },
+            text: text.to_string(), color: color, size: size,
+        }
+    }
+}
+
+impl Button {
+    pub fn new(text: &str, relative_pos: Vector2) -> Button {
+        Button {
+            text: text.to_string(),
+            pos: Vector2 {
+                x: SCREEN_SIZE.x * relative_pos.x - measure_text(&text, 20) as f32 / 2.0,
+                y: SCREEN_SIZE.y * relative_pos.y
+            },
+            
+            focused: false,
+            rect: Rectangle::new (
+                SCREEN_SIZE.x * relative_pos.x as f32 - (measure_text(&text, 20) + 30) as f32 / 2.0, 
+                SCREEN_SIZE.y * relative_pos.y - 10.0, measure_text(&text, 20) as f32 + 30.0, 40.0
+            )
+        }
+    }
+}
+
 impl GameScene for MainMenu {
     fn update(self: &mut Self, rl: &RaylibHandle) {
         let mouse_pos = rl.get_mouse_position();
 
         // Update buttons
-        self.singleplayer.focused = self.singleplayer.rect.check_collision_point_rec(mouse_pos);
-        self.multiplayer.focused = self.multiplayer.rect.check_collision_point_rec(mouse_pos);
-        self.quit.focused = self.quit.rect.check_collision_point_rec(mouse_pos);
+        self.singleplayer.focused = self.singleplayer.rect.check_collision_point_rec(mouse_pos) && !self.on_mltplyr_screen;
+        self.multiplayer.focused = self.multiplayer.rect.check_collision_point_rec(mouse_pos) && !self.on_mltplyr_screen;
+        self.quit.focused = self.quit.rect.check_collision_point_rec(mouse_pos) && !self.on_mltplyr_screen;
+
+        self.local_multiplayer.focused = self.local_multiplayer.rect.check_collision_point_rec(mouse_pos) && self.on_mltplyr_screen;
+        self.online_multiplayer.focused = self.online_multiplayer.rect.check_collision_point_rec(mouse_pos) && self.on_mltplyr_screen;
 
         // Exit if mouse isn't clicking
         if !rl.is_mouse_button_pressed(MouseButton::MOUSE_LEFT_BUTTON) { return; }
 
+        // Main screen
         if self.singleplayer.focused { self.start_game(false); }
-        if self.multiplayer.focused { self.start_game(true); }
+        if self.multiplayer.focused { self.on_mltplyr_screen = true; }
         if self.quit.focused { self.quit(); }
+
+        // Multiplayer screen
+        if self.local_multiplayer.focused { self.start_game(true); }
+        if self.online_multiplayer.focused { self.quit(); }
+        
     }
 
     fn draw(&mut self, rl: &mut RaylibHandle, thread: &RaylibThread) {
         // Clear screen
         let mut draw_handle = rl.begin_drawing(thread);
         draw_handle.clear_background(Color::BLACK);
+        
+        // Multiplayer Screen
+        if self.on_mltplyr_screen {
+            draw_handle.draw_text(&self.local_multiplayer.text, self.local_multiplayer.pos.x as i32, self.local_multiplayer.pos.y as i32,
+                20 as i32, if self.local_multiplayer.focused {HOVERING_BTN_COLOR} else {BTN_COLOR});
+
+            draw_handle.draw_text(&self.online_multiplayer.text, self.online_multiplayer.pos.x as i32, self.online_multiplayer.pos.y as i32,
+                20 as i32, if self.online_multiplayer.focused {HOVERING_BTN_COLOR} else {BTN_COLOR});
+
+            // Draw rects
+            // draw_handle.draw_rectangle_rec(&self.local_multiplayer.rect, Color::GRAY);
+            // draw_handle.draw_rectangle_rec(&self.online_multiplayer.rect, Color::GRAY);
+            
+            return;
+        }
 
         // Draw title
         draw_handle.draw_text(&self.title.text, self.title.pos.x as i32, self.title.pos.y as i32, 
@@ -58,7 +112,7 @@ impl GameScene for MainMenu {
         draw_handle.draw_text(&self.hiscore.text, self.hiscore.pos.x as i32, self.hiscore.pos.y as i32, 
                                self.hiscore.size as i32, self.hiscore.color);
 
-        // // Draw buttons rects
+        // Draw rects
         // draw_handle.draw_rectangle_rec(&self.singleplayer.rect, Color::GRAY);
         // draw_handle.draw_rectangle_rec(&self.multiplayer.rect, Color::GRAY);
         // draw_handle.draw_rectangle_rec(&self.quit.rect, Color::GRAY);
@@ -78,72 +132,50 @@ impl MainMenu {
 
     pub fn new() -> MainMenu {
         return MainMenu {
-            title: Text {
-                text: "Pong 2: The Enemy is Now Another".to_string(),
-                color: Color::GOLD,
-                size: 26,
-
-                pos: Vector2 { 
-                    x: SCREEN_SIZE.x / 2.0 - measure_text("Pong 2: The Enemy is Now Another", 26) as f32 / 2.0,
-                    y: SCREEN_SIZE.y * 0.1 
-                }
-            },
-
-            singleplayer: Button {
-                text: "Singleplayer".to_string(),
-                pos: Vector2 {
-                    x: SCREEN_SIZE.x / 2.0 - measure_text("Singleplayer", 20) as f32 / 2.0,
-                    y: SCREEN_SIZE.y * 0.4
-                },
-
-                focused: false,
-                rect: Rectangle::new (
-                    SCREEN_SIZE.x / 2.0 as f32 - (measure_text("Singleplayer", 20) + 30) as f32 / 2.0, 
-                    SCREEN_SIZE.y * 0.4 - 10.0, measure_text("Singleplayer", 20) as f32 + 30.0, 40.0
-                )
-            },
+            title: Text::new(
+                "Pong 2: The Enemy is Now Another", 
+                Vector2::new(0.5, 0.1), 
+                Color::GOLD, 
+                26
+            ),
             
-            multiplayer: Button {
-                text: "Multiplayer".to_string(),
-                pos: Vector2 {
-                    x: SCREEN_SIZE.x / 2.0 - measure_text("Multiplayer", 20) as f32 / 2.0,
-                    y: SCREEN_SIZE.y * 0.5
-                },
+            hiscore: Text::new(
+                &format!("HiScore: {}", get_highscore()), 
+                Vector2::new(0.5, 0.95),
+                Color::WHITE, 
+                16
+            ),
 
-                focused: false,
-                rect: Rectangle::new (
-                    SCREEN_SIZE.x / 2.0 as f32 - (measure_text("Multiplayer", 20) + 30) as f32 / 2.0, 
-                    SCREEN_SIZE.y * 0.5 - 10.0, measure_text("Multiplayer", 20) as f32 + 30.0, 40.0
-                )
-            },
+            singleplayer: Button::new(
+                "Singleplayer", 
+                Vector2::new(0.5, 0.4)
+            ),
 
-            quit: Button {
-                focused: false,
-                pos: Vector2 {
-                    x: SCREEN_SIZE.x / 2.0 - measure_text("Quit", 20) as f32 / 2.0,
-                    y: SCREEN_SIZE.y * 0.6
-                },
-                
-                text: "Quit".to_string(),
-                rect: Rectangle::new (
-                    SCREEN_SIZE.x / 2.0 as f32 - (measure_text("Quit", 20) + 30) as f32 / 2.0, 
-                    SCREEN_SIZE.y * 0.6 - 10.0, measure_text("Quit", 20) as f32 + 30.0, 40.0
-                )
-            },
+            multiplayer: Button::new(
+                "Multiplayer", 
+                Vector2::new(0.5, 0.5)
+            ),
+            
+            quit: Button::new(
+                "Quit", 
+                Vector2::new(0.5, 0.6)
+            ),
+            
 
-            hiscore: Text {
-                text: format!("HiScore: {}", get_highscore()).to_string(),
-                color: Color::WHITE,
-                size: 16,
+            on_mltplyr_screen: false,
+            selected_mode: GameMode::Singleplayer,
 
-                pos: Vector2 { 
-                    x: SCREEN_SIZE.x/2.0 - (measure_text(&format!("HiScore: {}", get_highscore()), 15) as f32/2.0),
-                    y: SCREEN_SIZE.y * 0.95 
-                }
-            },
+            local_multiplayer: Button::new(
+                "Local Multiplayer", 
+                Vector2::new(0.5, 0.4)
+            ),
+            
+            online_multiplayer: Button::new(
+                "Online Multiplayer", 
+                Vector2::new(0.5, 0.5)
+            ),
 
             is_active: true,
-            selected_mode: GameMode::Singleplayer,
         }                
     }
 }

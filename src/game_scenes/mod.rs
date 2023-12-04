@@ -45,6 +45,10 @@ pub struct MainMenu {
     multiplayer: Button,
     quit: Button,
 
+    on_mltplyr_screen: bool,
+    local_multiplayer: Button,
+    online_multiplayer: Button,
+
     selected_mode: GameMode,
     is_active: bool
 }
