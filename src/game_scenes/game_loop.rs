@@ -262,8 +262,8 @@ impl GameLoop {
                 self.score_color = Color::GREEN;
                 self.ball.speed = MAX_PLAYER_SPEED * 0.75;
 
-                self.left_paddle.speed = INITIAL_PADDLE_SPEED * 0.85;
-                self.right_paddle.speed = INITIAL_PADDLE_SPEED * 0.85;
+                self.left_paddle.speed = INITIAL_PADDLE_SPEED * 0.9;
+                self.right_paddle.speed = INITIAL_PADDLE_SPEED * 0.9;
             },
 
             25 => {
@@ -271,8 +271,8 @@ impl GameLoop {
                 self.score_color = Color::YELLOW;
                 self.ball.speed = MAX_PLAYER_SPEED * 0.85;
 
-                self.left_paddle.speed = INITIAL_PADDLE_SPEED * 0.735;
-                self.right_paddle.speed = INITIAL_PADDLE_SPEED * 0.735;
+                self.left_paddle.speed = INITIAL_PADDLE_SPEED * 0.8;
+                self.right_paddle.speed = INITIAL_PADDLE_SPEED * 0.8;
                 self.left_paddle.view_range = INITIAL_PADDLE_RANGE * 0.8;
                 self.right_paddle.view_range = INITIAL_PADDLE_RANGE * 0.8;
             },
