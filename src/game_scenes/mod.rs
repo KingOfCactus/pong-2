@@ -49,6 +49,11 @@ pub struct MainMenu {
     local_multiplayer: Button,
     online_multiplayer: Button,
 
+    on_devices_screen:bool,
+    select_devices_txts: Vec<Text>,
+    select_devices_btns: Vec<Button>,
+    selected_devices:Vec<PlayerInput>,
+
     selected_mode: GameMode,
     is_active: bool
 }
