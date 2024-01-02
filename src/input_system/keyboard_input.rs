@@ -2,6 +2,15 @@ use super::*;
 use raylib::consts::KeyboardKey::*;
 
 impl InputDevice for KeyboardInput {
+    fn get_name(self: &mut Self) -> String {
+        if self.use_wasd {
+            return "Keyboard [WASD]".to_string();
+        }
+        else {
+            return "Keyboard [Arrows]".to_string();
+        }
+    }
+    
     // A keyboard don't have axis
     fn use_axis(self: &mut Self) -> bool { return false; }
     fn get_axis(self: &mut Self, _rl: &RaylibHandle) -> Vector2 {

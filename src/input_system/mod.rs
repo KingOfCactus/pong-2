@@ -34,6 +34,8 @@ impl InputData {
 pub trait InputDevice {
     fn get_buttons(self: &mut Self, rl: &RaylibHandle) -> [bool; 4];
     fn get_axis(self: &mut Self, rl: &RaylibHandle) -> Vector2;
+    
+    fn get_name(self: &mut Self) -> String;
     fn use_axis(self: &mut Self) -> bool;
 }
 

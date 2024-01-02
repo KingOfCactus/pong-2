@@ -3,6 +3,10 @@ use raylib::consts::GamepadAxis::*;
 use raylib::consts::GamepadButton::*;
 
 impl InputDevice for GamepadInput {
+    fn get_name(self: &mut Self) -> String {
+        return format!("Gamepad {}", self.gamepad_id + 1);
+    }
+
     fn use_axis(self: &mut Self) -> bool { return self.use_axis; }
     fn get_axis(self: &mut Self, rl: &RaylibHandle) -> Vector2 {
         // Panic if if the device don't have axis or it's set to not use it
