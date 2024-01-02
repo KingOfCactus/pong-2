@@ -1,5 +1,5 @@
 use super::*;
-use crate::utils::{SCREEN_SIZE, get_highscore};
+use crate::{utils::{SCREEN_SIZE, get_highscore, self}, input_system::InputDevice};
 
 const HOVERING_BTN_COLOR: Color = Color::WHITE;
 const BTN_COLOR: Color = Color::new(150, 150, 150, 255);
@@ -77,8 +77,14 @@ impl GameScene for MainMenu {
         if self.local_multiplayer.focused { self.start_game(true); }
         if self.online_multiplayer.focused { self.quit(); }
         
+        // Devices screen
+        if self.select_devices_btns[0].focused { self.change_selected_device(0, 1, rl) }
+        if self.select_devices_btns[1].focused { self.change_selected_device(0, -1, rl) }
+        if self.select_devices_btns[2].focused { self.change_selected_device(1, 1, rl) }
+        if self.select_devices_btns[3].focused { self.change_selected_device(1, -1, rl) }
+
         return;
-        todo!("Remove long bttn's boolean expressions");
+        todo!("Remove long btn's boolean expressions");
     }
 
     fn draw(&mut self, rl: &mut RaylibHandle, thread: &RaylibThread) {
@@ -150,6 +156,19 @@ impl MainMenu {
         self.is_active = false;
     }
 
+    fn change_selected_device(self: &mut Self, player_id: usize, step: i32, rl: &RaylibHandle) {
+        let mut avaliable_devices = utils::get_connected_devices(&rl);
+        let mut device_id = self.selected_devices[player_id] + step;
+        let devices_amount = avaliable_devices.len() as i32;
+
+        if device_id < 0 { device_id = devices_amount - 1 }
+        if device_id >= devices_amount { device_id = 0 }
+        self.selected_devices[player_id] = device_id;
+        
+        let mut text = &mut self.select_devices_txts[player_id];
+        text.text = avaliable_devices[device_id as usize].get_name();
+    }
+
     pub fn new() -> MainMenu {
         return MainMenu {
             title: Text::new(
@@ -173,10 +192,10 @@ impl MainMenu {
 
 
             on_devices_screen: false,
-            selected_devices: Vec::new(),
+            selected_devices: vec![-1, -1],
             select_devices_txts: vec![
-                Text::new("Player 1: <Device>", Vector2::new(0.5, 0.4), Color::new(10, 255, 255, 150), 20),
-                Text::new("Player 2: <Device>", Vector2::new(0.5, 0.5), Color::new(255, 40, 0, 130), 20)
+                Text::new("Set Player 1 Device", Vector2::new(0.5, 0.4), Color::new(10, 255, 255, 150), 20),
+                Text::new("Set Player 2 Device", Vector2::new(0.5, 0.5), Color::new(255, 40, 0, 130), 20)
             ],
 
             select_devices_btns: vec![

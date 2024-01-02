@@ -3,7 +3,10 @@ use std::io::Write;
 use raylib::prelude::*;
 use raylib::prelude::Vector2;
 
+use crate::input_system::{InputDevice, KeyboardInput, GamepadInput};
+
 pub const SCREEN_SIZE: Vector2 = Vector2 { x: 640.0, y: 480.0 };
+const MAX_CONNECTED_GAMEPADS: usize = 4;
 
 pub fn init_window() -> (RaylibHandle, RaylibThread) {
     let (mut rl_handle, _thread) = raylib::init()
@@ -31,4 +34,18 @@ pub fn save_highscore(i: i32) {
     let mut file = fs::OpenOptions::new().write(true).open("highscore.txt").unwrap();
     let buffer: String = i.to_string();
     file.write_all(buffer.as_bytes()).unwrap();
+}
+
+pub fn get_connected_devices(rl: &RaylibHandle) -> Vec<Box<dyn InputDevice>> {
+    let mut devices: Vec<Box<dyn InputDevice>> = Vec::with_capacity(MAX_CONNECTED_GAMEPADS + 2);
+    devices.insert(0, Box::new(KeyboardInput::new(true)));
+    devices.insert(1, Box::new(KeyboardInput::new(false)));
+
+    for i in 0..MAX_CONNECTED_GAMEPADS{
+        if rl.is_gamepad_available(i as i32) {
+            devices.insert(i + 2, Box::new(GamepadInput::new(i as i32, true)));
+        }
+    }
+
+    return devices;
 }

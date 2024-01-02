@@ -2,7 +2,7 @@ mod main_menu;
 mod game_loop;
 
 use raylib::prelude::*;
-use crate::{game_objects::*, input_system::PlayerInput};
+use crate::{game_objects::*, input_system::{PlayerInput, InputDevice}};
 
 use self::main_menu::*;
 
@@ -52,7 +52,7 @@ pub struct MainMenu {
     on_devices_screen:bool,
     select_devices_txts: Vec<Text>,
     select_devices_btns: Vec<Button>,
-    selected_devices:Vec<PlayerInput>,
+    selected_devices:Vec<i32>,
 
     selected_mode: GameMode,
     is_active: bool
