@@ -49,3 +49,11 @@ pub fn get_connected_devices(rl: &RaylibHandle) -> Vec<Box<dyn InputDevice>> {
 
     return devices;
 }
+
+pub fn get_connected_device_by_id(id: i32, rl: &RaylibHandle) -> Box<dyn InputDevice>{
+    match id {
+        0 => return Box::new(KeyboardInput::new(true)),
+        1 => return Box::new(KeyboardInput::new(false)),
+        _ => return Box::new(GamepadInput::new(id - 2, true))
+    }
+}

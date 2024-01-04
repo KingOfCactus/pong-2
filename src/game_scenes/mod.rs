@@ -11,7 +11,7 @@ pub enum GameMode { Singleplayer, Multiplayer }
 
 pub trait GameScene {
     fn is_active(&self) -> bool;
-    fn get_next_scene(&self) -> Box<dyn GameScene>;
+    fn get_next_scene(&self, rl: &RaylibHandle) -> Box<dyn GameScene>;
     
     fn update(&mut self, rl: &RaylibHandle);
     fn draw(&mut self, rl: &mut RaylibHandle, thread: &RaylibThread); // Needs to be the last called method, since it drops the RaylibHandle

@@ -48,9 +48,12 @@ pub struct PlayerInput {
     device: Box<dyn InputDevice>,
 }
 
+#[derive(Clone, Copy)]
 pub struct KeyboardInput {
     use_wasd: bool
 }
+
+#[derive(Clone, Copy)]
 pub struct GamepadInput {
     gamepad_id: i32,
     use_axis: bool

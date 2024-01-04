@@ -66,7 +66,7 @@ impl GameScene for GameLoop {
     }
 
     fn is_active(&self) -> bool { return self.is_active; }
-    fn get_next_scene(&self) -> Box<dyn GameScene> { return Box::new(MainMenu::new()); }
+    fn get_next_scene(&self, rl: &RaylibHandle) -> Box<dyn GameScene> { return Box::new(MainMenu::new()); }
 }
 
 impl GameLoop {
@@ -186,7 +186,7 @@ impl GameLoop {
         todo!("Fix this and made so that every localplayer information in show");
     }
     
-    pub fn new(selected_mode: GameMode) -> GameLoop {
+    pub fn new(selected_mode: GameMode, selected_devices: (Box<dyn InputDevice>, Box<dyn InputDevice>)) -> GameLoop {
         return GameLoop {
              score: 0,
              checkpoint: 0,
@@ -203,11 +203,11 @@ impl GameLoop {
              players_input: vec![
                  // Player 1
                  // PlayerInput::new(0, Box::new(GamepadInput::new(0, true)), 3.0, true),
-                 PlayerInput::new(0, Box::new(KeyboardInput::new(true)), 3.0, true),
+                 PlayerInput::new(0, selected_devices.0, 3.0, true),
  
                  // Player 2
                  // PlayerInput::new(1, Box::new(KeyboardInput::new()), 7.0, false),
-                 PlayerInput::new(1, Box::new(GamepadInput::new(0, true)), 7.0, false) 
+                 PlayerInput::new(1, selected_devices.1, 7.0, false) 
              ],
              
              ball: Ball::new(

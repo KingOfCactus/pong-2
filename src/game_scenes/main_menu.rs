@@ -1,14 +1,15 @@
 use super::*;
-use crate::{utils::{SCREEN_SIZE, get_highscore, self}, input_system::InputDevice};
+use crate::utils::*;
 
 const HOVERING_BTN_COLOR: Color = Color::WHITE;
 const BTN_COLOR: Color = Color::new(150, 150, 150, 255);
 
 pub struct Text {
+    relative_pos: Vector2,
     color: Color,
     text: String,
-    size: i32,
     pos: Vector2,
+    size: i32
 }
 
 pub struct Button {
@@ -25,8 +26,13 @@ impl Text {
                 x: SCREEN_SIZE.x * relative_pos.x - measure_text(text, size) as f32 / 2.0,
                 y: SCREEN_SIZE.y * relative_pos.y 
             },
-            text: text.to_string(), color: color, size: size,
+            relative_pos: relative_pos, text: text.to_string(), color: color, size: size,
         }
+    }
+
+    pub fn centralize(self: &mut Self) {
+        self.pos.x = SCREEN_SIZE.x * self.relative_pos.x 
+                   - measure_text(self.text.as_str(), self.size) as f32 / 2.0;
     }
 }
 
@@ -78,10 +84,12 @@ impl GameScene for MainMenu {
         if self.online_multiplayer.focused { self.quit(); }
         
         // Devices screen
-        if self.select_devices_btns[0].focused { self.change_selected_device(0, 1, rl) }
-        if self.select_devices_btns[1].focused { self.change_selected_device(0, -1, rl) }
-        if self.select_devices_btns[2].focused { self.change_selected_device(1, 1, rl) }
-        if self.select_devices_btns[3].focused { self.change_selected_device(1, -1, rl) }
+        if self.select_devices_btns[0].focused { self.select_input_device(0,  1, rl) }
+        if self.select_devices_btns[1].focused { self.select_input_device(0, -1, rl) }
+        if self.select_devices_btns[2].focused { self.select_input_device(1,  1, rl) }
+        if self.select_devices_btns[3].focused { self.select_input_device(1, -1, rl) }
+
+        if self.select_devices_btns[4].focused { self.start_game(true); }
 
         return;
         todo!("Remove long btn's boolean expressions");
@@ -145,28 +153,52 @@ impl GameScene for MainMenu {
     }
 
     fn is_active(&self) -> bool { return self.is_active; }
-    fn get_next_scene(&self) -> Box<dyn GameScene> { return Box::new(GameLoop::new(self.selected_mode)); }
+    fn get_next_scene(&self, rl: &RaylibHandle) -> Box<dyn GameScene> { 
+        let mut devices = (get_connected_device_by_id(self.selected_devices[0], rl),
+                           get_connected_device_by_id(self.selected_devices[1], rl));
+
+        return Box::new(GameLoop::new(self.selected_mode, devices));
+    }
 }
 
 impl MainMenu {
     fn quit(self: &mut Self) { todo!("Implement this") }
 
     fn start_game(self: &mut Self, selected_multiplayer: bool) {
-        if selected_multiplayer { self.selected_mode = GameMode::Multiplayer }
+        if selected_multiplayer { 
+            // Make sure that the devices were selected
+            if self.selected_devices[0] == -1 || self.selected_devices[1] == -1 {
+                return;
+            }
+            self.selected_mode = GameMode::Multiplayer; 
+        }
+        else {
+            self.selected_devices[1] = self.selected_devices[0];
+        }
+
+
         self.is_active = false;
     }
 
-    fn change_selected_device(self: &mut Self, player_id: usize, step: i32, rl: &RaylibHandle) {
-        let mut avaliable_devices = utils::get_connected_devices(&rl);
+    fn select_input_device(self: &mut Self, player_id: usize, step: i32, rl: &RaylibHandle) {
+        let mut avaliable_devices = get_connected_devices(&rl);
         let mut device_id = self.selected_devices[player_id] + step;
         let devices_amount = avaliable_devices.len() as i32;
 
         if device_id < 0 { device_id = devices_amount - 1 }
         if device_id >= devices_amount { device_id = 0 }
         self.selected_devices[player_id] = device_id;
+        println!("{}, {}", self.selected_devices[0], self.selected_devices[1]);
+
+        // Make sure the device wasn't selected already
+        if self.selected_devices[0] == self.selected_devices[1] {
+            let other_player = i32::abs(player_id as i32 - 1) as usize;
+            self.select_input_device(other_player, step * -1, rl);
+        }
         
-        let mut text = &mut self.select_devices_txts[player_id];
+        let mut text = &mut self.select_devices_txts[player_id + 1];
         text.text = avaliable_devices[device_id as usize].get_name();
+        text.centralize();
     }
 
     pub fn new() -> MainMenu {
@@ -194,8 +226,9 @@ impl MainMenu {
             on_devices_screen: false,
             selected_devices: vec![-1, -1],
             select_devices_txts: vec![
-                Text::new("Set Player 1 Device", Vector2::new(0.5, 0.4), Color::new(10, 255, 255, 150), 20),
-                Text::new("Set Player 2 Device", Vector2::new(0.5, 0.5), Color::new(255, 40, 0, 130), 20)
+                Text::new("Choose Players Input:", Vector2::new(0.5, 0.25), Color::WHITE, 20),
+                Text::new("Player 1", Vector2::new(0.5, 0.4), Color::new(10, 255, 255, 150), 20),
+                Text::new("Player 2", Vector2::new(0.5, 0.5), Color::new(255, 40, 0, 130), 20)
             ],
 
             select_devices_btns: vec![
@@ -206,6 +239,8 @@ impl MainMenu {
                 // Player 2
                 Button::new(">", Vector2::new(0.7, 0.5)),
                 Button::new("<", Vector2::new(0.3, 0.5)),
+
+                Button::new("Start", Vector2::new(0.5, 0.75)),
             ],
             
             is_active: true,

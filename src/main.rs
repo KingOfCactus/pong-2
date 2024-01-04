@@ -13,7 +13,7 @@ fn main() {
     // Each frame
     while !rl.window_should_close() {
         if !scene.is_active() {
-            scene = scene.get_next_scene(); 
+            scene = scene.get_next_scene(&rl); 
         }
 
         scene.update(&rl);
