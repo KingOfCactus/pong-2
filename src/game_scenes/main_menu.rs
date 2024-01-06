@@ -4,6 +4,8 @@ use crate::utils::*;
 const HOVERING_BTN_COLOR: Color = Color::WHITE;
 const BTN_COLOR: Color = Color::new(150, 150, 150, 255);
 
+
+#[derive(Clone)]
 pub struct Text {
     relative_pos: Vector2,
     color: Color,
@@ -12,6 +14,7 @@ pub struct Text {
     size: i32
 }
 
+#[derive(Clone)]
 pub struct Button {
     rect: Rectangle,
     text: String,
@@ -60,8 +63,8 @@ impl GameScene for MainMenu {
 
         // Update buttons
         self.singleplayer.focused = self.singleplayer.rect.check_collision_point_rec(mouse_pos) && !self.on_mltplyr_screen && !self.on_devices_screen;
-        self.multiplayer.focused = self.multiplayer.rect.check_collision_point_rec(mouse_pos) && !self.on_mltplyr_screen;
-        self.quit.focused = self.quit.rect.check_collision_point_rec(mouse_pos) && !self.on_mltplyr_screen;
+        self.multiplayer.focused = self.multiplayer.rect.check_collision_point_rec(mouse_pos) && !self.on_mltplyr_screen && !self.on_devices_screen;
+        self.quit.focused = self.quit.rect.check_collision_point_rec(mouse_pos) && !self.on_mltplyr_screen && !self.on_devices_screen;
 
         self.local_multiplayer.focused = self.local_multiplayer.rect.check_collision_point_rec(mouse_pos) && self.on_mltplyr_screen;
         self.online_multiplayer.focused = self.online_multiplayer.rect.check_collision_point_rec(mouse_pos) && self.on_mltplyr_screen;
@@ -75,21 +78,24 @@ impl GameScene for MainMenu {
         if !rl.is_mouse_button_pressed(MouseButton::MOUSE_LEFT_BUTTON) { return; }
 
         // Main screen
-        if self.singleplayer.focused { self.start_game(false); }
-        if self.multiplayer.focused { self.on_devices_screen = true; }
+        if self.singleplayer.focused { self.show_device_screen(true); }
+        if self.multiplayer.focused { self.show_device_screen(false); }
         if self.quit.focused { self.quit(); }
 
         // Multiplayer screen
-        if self.local_multiplayer.focused { self.start_game(true); }
+        if self.local_multiplayer.focused { self.start_game(); }
         if self.online_multiplayer.focused { self.quit(); }
         
         // Devices screen
         if self.select_devices_btns[0].focused { self.select_input_device(0,  1, rl) }
         if self.select_devices_btns[1].focused { self.select_input_device(0, -1, rl) }
-        if self.select_devices_btns[2].focused { self.select_input_device(1,  1, rl) }
-        if self.select_devices_btns[3].focused { self.select_input_device(1, -1, rl) }
-
-        if self.select_devices_btns[4].focused { self.start_game(true); }
+        
+        if self.selected_mode == GameMode::Multiplayer {
+            if self.select_devices_btns[2].focused { self.select_input_device(1,  1, rl) }
+            if self.select_devices_btns[3].focused { self.select_input_device(1, -1, rl) }
+            if self.select_devices_btns[4].focused { self.start_game() }
+        }
+        else { if self.select_devices_btns[2].focused { self.start_game() } }
 
         return;
         todo!("Remove long btn's boolean expressions");
@@ -124,7 +130,6 @@ impl GameScene for MainMenu {
                 draw_handle.draw_text(&button.text, button.pos.x as i32, button.pos.y as i32,
                     20 as i32, if button.focused {HOVERING_BTN_COLOR} else {BTN_COLOR});
             }
-
             return;
         }
 
@@ -154,8 +159,8 @@ impl GameScene for MainMenu {
 
     fn is_active(&self) -> bool { return self.is_active; }
     fn get_next_scene(&self, rl: &RaylibHandle) -> Box<dyn GameScene> { 
-        let mut devices = (get_connected_device_by_id(self.selected_devices[0], rl),
-                           get_connected_device_by_id(self.selected_devices[1], rl));
+        let mut devices = (get_device_by_id(self.selected_devices[0], rl),
+                           get_device_by_id(self.selected_devices[1], rl));
 
         return Box::new(GameLoop::new(self.selected_mode, devices));
     }
@@ -164,18 +169,44 @@ impl GameScene for MainMenu {
 impl MainMenu {
     fn quit(self: &mut Self) { todo!("Implement this") }
 
-    fn start_game(self: &mut Self, selected_multiplayer: bool) {
-        if selected_multiplayer { 
+    fn show_device_screen(self: &mut Self, is_singleplayer: bool) {
+        let buttons = &mut self.select_devices_btns;
+        let texts = &mut self.select_devices_txts;
+
+        if is_singleplayer {
+            self.selected_mode = GameMode::Singleplayer;
+
+            // Remove player 2 text and buttons
+            let mut len = buttons.len() as usize - 1;
+            buttons[len].pos.y = buttons[len-1].pos.y * 1.075;
+            buttons[len].rect.y = buttons[len].pos.y;
+
+            buttons.remove(len - 1);
+            buttons.remove(len - 2);
+
+            len = texts.len() as usize - 1;
+            texts.remove(len);
+        }
+        else { self.selected_mode = GameMode::Multiplayer; }
+
+        self.on_devices_screen = true;
+    }
+
+    fn start_game(self: &mut Self) {
+        if self.selected_mode == GameMode::Multiplayer { 
             // Make sure that the devices were selected
             if self.selected_devices[0] == -1 || self.selected_devices[1] == -1 {
                 return;
             }
-            self.selected_mode = GameMode::Multiplayer; 
-        }
-        else {
-            self.selected_devices[1] = self.selected_devices[0];
         }
 
+        else {
+            // Make sure that the devices were selected
+            if self.selected_devices[0] == -1 {
+                return;
+            }
+            self.selected_devices[1] = self.selected_devices[0];
+        }
 
         self.is_active = false;
     }
