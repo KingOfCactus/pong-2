@@ -66,7 +66,7 @@ impl GameScene for GameLoop {
     }
 
     fn is_active(&self) -> bool { return self.is_active; }
-    fn get_next_scene(&self, rl: &RaylibHandle) -> Box<dyn GameScene> { return Box::new(MainMenu::new()); }
+    fn get_next_scene(&self, _rl: &RaylibHandle) -> Box<dyn GameScene> { return Box::new(MainMenu::new()); }
 }
 
 impl GameLoop {

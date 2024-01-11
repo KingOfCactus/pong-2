@@ -140,8 +140,8 @@ impl GameScene for MainMenu {
 
     fn is_active(&self) -> bool { return self.is_active; }
     fn get_next_scene(&self, rl: &RaylibHandle) -> Box<dyn GameScene> { 
-        let mut devices = (get_device_by_id(self.selected_devices[0], rl),
-                           get_device_by_id(self.selected_devices[1], rl));
+        let devices = (get_device_by_id(self.selected_devices[0]),
+                           get_device_by_id(self.selected_devices[1]));
 
         return Box::new(GameLoop::new(self.selected_mode, devices));
     }
@@ -182,7 +182,7 @@ impl MainMenu {
             self.select_input_device(other_player, step * -1, rl);
         }
         
-        let mut text = &mut self.select_devices_txts[player_id + 1];
+        let text = &mut self.select_devices_txts[player_id + 1];
         text.text = avaliable_devices[device_id as usize].get_name();
         text.centralize();
     }

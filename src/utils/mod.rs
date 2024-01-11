@@ -50,7 +50,7 @@ pub fn get_connected_devices(rl: &RaylibHandle) -> Vec<Box<dyn InputDevice>> {
     return devices;
 }
 
-pub fn get_device_by_id(id: i32, rl: &RaylibHandle) -> Box<dyn InputDevice>{
+pub fn get_device_by_id(id: i32) -> Box<dyn InputDevice>{
     match id {
         0 => return Box::new(KeyboardInput::new(true)),
         1 => return Box::new(KeyboardInput::new(false)),

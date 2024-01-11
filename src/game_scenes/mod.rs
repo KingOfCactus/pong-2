@@ -2,7 +2,8 @@ mod main_menu;
 mod game_loop;
 
 use raylib::prelude::*;
-use crate::{game_objects::*, input_system::{PlayerInput, InputDevice}};
+use crate::game_objects::*;
+use crate::input_system::PlayerInput;
 
 use self::main_menu::*;
 
