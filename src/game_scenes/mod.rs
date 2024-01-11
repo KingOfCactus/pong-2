@@ -40,16 +40,14 @@ pub struct GameLoop {
 pub struct MainMenu {
     title: Text,
     hiscore: Text,
-
+    current_screen: MenuScreen,
     singleplayer: Button,
     multiplayer: Button,
     quit: Button,
 
-    on_mltplyr_screen: bool,
     local_multiplayer: Button,
     online_multiplayer: Button,
 
-    on_devices_screen:bool,
     select_devices_txts: Vec<Text>,
     select_devices_btns: Vec<Button>,
     selected_devices:Vec<i32>,

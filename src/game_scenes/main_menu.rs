@@ -1,9 +1,11 @@
+use std::vec;
+
 use super::*;
 use crate::utils::*;
 
 const HOVERING_BTN_COLOR: Color = Color::WHITE;
 const BTN_COLOR: Color = Color::new(150, 150, 150, 255);
-
+pub enum MenuScreen { TitleScreen, DeviceScreen, MultiplayerScreen }
 
 #[derive(Clone)]
 pub struct Text {
@@ -19,7 +21,6 @@ pub struct Button {
     rect: Rectangle,
     text: String,
     pos: Vector2,
-    focused: bool,
 }
 
 impl Text {
@@ -48,113 +49,93 @@ impl Button {
                 y: SCREEN_SIZE.y * relative_pos.y
             },
             
-            focused: false,
             rect: Rectangle::new (
                 SCREEN_SIZE.x * relative_pos.x as f32 - (measure_text(&text, 20) + 30) as f32 / 2.0, 
                 SCREEN_SIZE.y * relative_pos.y - 10.0, measure_text(&text, 20) as f32 + 30.0, 40.0
             )
         }
     }
+
+    pub fn is_focused (self: &Self, pointer: Vector2) -> bool {
+        return self.rect.check_collision_point_rec(pointer);
+    }
 }
 
 impl GameScene for MainMenu {
     fn update(self: &mut Self, rl: &RaylibHandle) {
+        // Return if mouse isn't clicking
+        if !rl.is_mouse_button_pressed(MouseButton::MOUSE_LEFT_BUTTON) {
+            return;
+        }
+        
+        // Check if buttons were clicked
         let mouse_pos = rl.get_mouse_position();
+        match self.current_screen {
+            MenuScreen::MultiplayerScreen => {
+                if self.local_multiplayer.is_focused(mouse_pos) { self.start_game(); }
+                if self.online_multiplayer.is_focused(mouse_pos) { self.quit(); }
+            },
+            
+            MenuScreen::TitleScreen => {
+                if self.singleplayer.is_focused(mouse_pos) { self.show_device_screen(true); }
+                if self.multiplayer.is_focused(mouse_pos) { self.show_device_screen(false); }
+                if self.quit.is_focused(mouse_pos) { self.quit(); }
+            },
 
-        // Update buttons
-        self.singleplayer.focused = self.singleplayer.rect.check_collision_point_rec(mouse_pos) && !self.on_mltplyr_screen && !self.on_devices_screen;
-        self.multiplayer.focused = self.multiplayer.rect.check_collision_point_rec(mouse_pos) && !self.on_mltplyr_screen && !self.on_devices_screen;
-        self.quit.focused = self.quit.rect.check_collision_point_rec(mouse_pos) && !self.on_mltplyr_screen && !self.on_devices_screen;
-
-        self.local_multiplayer.focused = self.local_multiplayer.rect.check_collision_point_rec(mouse_pos) && self.on_mltplyr_screen;
-        self.online_multiplayer.focused = self.online_multiplayer.rect.check_collision_point_rec(mouse_pos) && self.on_mltplyr_screen;
-
-        // Select devices buttons 
-        for button in &mut self.select_devices_btns {
-            button.focused = button.rect.check_collision_point_rec(mouse_pos) && self.on_devices_screen;
-        }   
+            MenuScreen::DeviceScreen => {
+                // Player 1
+                if self.select_devices_btns[0].is_focused(mouse_pos) { self.select_input_device(0,  1, rl) } // '>'
+                if self.select_devices_btns[1].is_focused(mouse_pos) { self.select_input_device(0, -1, rl) } // '<'
+                
+                if self.selected_mode == GameMode::Multiplayer {
+                    // Player 2
+                    if self.select_devices_btns[2].is_focused(mouse_pos) { self.select_input_device(1,  1, rl) } // '>'
+                    if self.select_devices_btns[3].is_focused(mouse_pos) { self.select_input_device(1, -1, rl) } // '<'
+                    if self.select_devices_btns[4].is_focused(mouse_pos) { self.start_game() }
+                }
+                else { if self.select_devices_btns[2].is_focused(mouse_pos) { self.start_game() } }
+            }
+        }
 
         // Exit if mouse isn't clicking
         if !rl.is_mouse_button_pressed(MouseButton::MOUSE_LEFT_BUTTON) { return; }
 
-        // Main screen
-        if self.singleplayer.focused { self.show_device_screen(true); }
-        if self.multiplayer.focused { self.show_device_screen(false); }
-        if self.quit.focused { self.quit(); }
-
-        // Multiplayer screen
-        if self.local_multiplayer.focused { self.start_game(); }
-        if self.online_multiplayer.focused { self.quit(); }
-        
-        // Devices screen
-        if self.select_devices_btns[0].focused { self.select_input_device(0,  1, rl) }
-        if self.select_devices_btns[1].focused { self.select_input_device(0, -1, rl) }
-        
-        if self.selected_mode == GameMode::Multiplayer {
-            if self.select_devices_btns[2].focused { self.select_input_device(1,  1, rl) }
-            if self.select_devices_btns[3].focused { self.select_input_device(1, -1, rl) }
-            if self.select_devices_btns[4].focused { self.start_game() }
-        }
-        else { if self.select_devices_btns[2].focused { self.start_game() } }
-
         return;
-        todo!("Remove long btn's boolean expressions");
     }
 
     fn draw(&mut self, rl: &mut RaylibHandle, thread: &RaylibThread) {
+        let mouse_pos = rl.get_mouse_position();
+        
         // Clear screen
         let mut draw_handle = rl.begin_drawing(thread);
         draw_handle.clear_background(Color::BLACK);
         
-        // Multiplayer Screen
-        if self.on_mltplyr_screen {
-            draw_handle.draw_text(&self.local_multiplayer.text, self.local_multiplayer.pos.x as i32, self.local_multiplayer.pos.y as i32,
-                20 as i32, if self.local_multiplayer.focused {HOVERING_BTN_COLOR} else {BTN_COLOR});
+        // Get elements to draw
+        let elements = match self.current_screen {
+            MenuScreen::TitleScreen => (
+                    vec![self.title.clone(), self.hiscore.clone()],
+                    vec![self.singleplayer.clone(), self.multiplayer.clone(), self.quit.clone()]
+                ),
+            MenuScreen::DeviceScreen => (
+                    self.select_devices_txts.clone(), 
+                    self.select_devices_btns.clone()
+                ),
+            MenuScreen::MultiplayerScreen => (
+                    vec![], vec![self.local_multiplayer.clone(), self.online_multiplayer.clone()]
+                )
+        };
 
-            draw_handle.draw_text(&self.online_multiplayer.text, self.online_multiplayer.pos.x as i32, self.online_multiplayer.pos.y as i32,
-                20 as i32, if self.online_multiplayer.focused {HOVERING_BTN_COLOR} else {BTN_COLOR});
-            
-            return;
+        // Draw texts 
+        for text in &elements.0 {
+            draw_handle.draw_text(&text.text, text.pos.x as i32, text.pos.y as i32, 
+                text.size, text.color);
         }
 
-        // Input Devices Screen
-        else if self.on_devices_screen {
-            // Draw texts 
-            for text in &self.select_devices_txts {
-                draw_handle.draw_text(&text.text, text.pos.x as i32, text.pos.y as i32, 
-                    text.size, text.color);
-            }
-
-            // Draw buttons 
-            for button in &self.select_devices_btns {
-                draw_handle.draw_text(&button.text, button.pos.x as i32, button.pos.y as i32,
-                    20 as i32, if button.focused {HOVERING_BTN_COLOR} else {BTN_COLOR});
-            }
-            return;
+        // Draw buttons 
+        for button in &elements.1 {
+            draw_handle.draw_text(&button.text, button.pos.x as i32, button.pos.y as i32,
+                20 as i32, if button.is_focused(mouse_pos) {HOVERING_BTN_COLOR} else {BTN_COLOR});
         }
-
-        // Draw title
-        draw_handle.draw_text(&self.title.text, self.title.pos.x as i32, self.title.pos.y as i32, 
-                               self.title.size, self.title.color);
-
-        // Draw buttons
-        draw_handle.draw_text(&self.singleplayer.text, self.singleplayer.pos.x as i32, self.singleplayer.pos.y as i32,
-                               20 as i32, if self.singleplayer.focused {HOVERING_BTN_COLOR} else {BTN_COLOR});
-
-        draw_handle.draw_text(&self.multiplayer.text, self.multiplayer.pos.x as i32, self.multiplayer.pos.y as i32,
-                               20 as i32, if self.multiplayer.focused {HOVERING_BTN_COLOR} else {BTN_COLOR});
-        
-        draw_handle.draw_text(&self.quit.text, self.quit.pos.x as i32, self.quit.pos.y as i32,
-                               20 as i32, if self.quit.focused {HOVERING_BTN_COLOR} else {BTN_COLOR});
-    
-        // Draw score text
-        draw_handle.draw_text(&self.hiscore.text, self.hiscore.pos.x as i32, self.hiscore.pos.y as i32, 
-                               self.hiscore.size as i32, self.hiscore.color);
-
-        // Draw rects
-        // draw_handle.draw_rectangle_rec(&self.singleplayer.rect, Color::GRAY);
-        // draw_handle.draw_rectangle_rec(&self.multiplayer.rect, Color::GRAY);
-        // draw_handle.draw_rectangle_rec(&self.quit.rect, Color::GRAY);
     }
 
     fn is_active(&self) -> bool { return self.is_active; }
@@ -169,29 +150,6 @@ impl GameScene for MainMenu {
 impl MainMenu {
     fn quit(self: &mut Self) { todo!("Implement this") }
 
-    fn show_device_screen(self: &mut Self, is_singleplayer: bool) {
-        let buttons = &mut self.select_devices_btns;
-        let texts = &mut self.select_devices_txts;
-
-        if is_singleplayer {
-            self.selected_mode = GameMode::Singleplayer;
-
-            // Remove player 2 text and buttons
-            let mut len = buttons.len() as usize - 1;
-            buttons[len].pos.y = buttons[len-1].pos.y * 1.075;
-            buttons[len].rect.y = buttons[len].pos.y;
-
-            buttons.remove(len - 1);
-            buttons.remove(len - 2);
-
-            len = texts.len() as usize - 1;
-            texts.remove(len);
-        }
-        else { self.selected_mode = GameMode::Multiplayer; }
-
-        self.on_devices_screen = true;
-    }
-
     fn start_game(self: &mut Self) {
         if self.selected_mode == GameMode::Multiplayer { 
             // Make sure that the devices were selected
@@ -199,12 +157,9 @@ impl MainMenu {
                 return;
             }
         }
-
         else {
             // Make sure that the devices were selected
-            if self.selected_devices[0] == -1 {
-                return;
-            }
+            if self.selected_devices[0] == -1 { return; }
             self.selected_devices[1] = self.selected_devices[0];
         }
 
@@ -232,8 +187,33 @@ impl MainMenu {
         text.centralize();
     }
 
+    fn show_device_screen(self: &mut Self, is_singleplayer: bool) {
+        let buttons = &mut self.select_devices_btns;
+        let texts = &mut self.select_devices_txts;
+
+        if is_singleplayer {
+            self.selected_mode = GameMode::Singleplayer;
+
+            // Remove player 2 text and buttons
+            let mut len = buttons.len() as usize - 1;
+            buttons[len].pos.y = buttons[len-1].pos.y * 1.075;
+            buttons[len].rect.y = buttons[len].pos.y;
+
+            buttons.remove(len - 1);
+            buttons.remove(len - 2);
+
+            len = texts.len() as usize - 1;
+            texts.remove(len);
+        }
+        else { self.selected_mode = GameMode::Multiplayer; }
+
+        self.current_screen = MenuScreen::DeviceScreen;
+    }
+
     pub fn new() -> MainMenu {
         return MainMenu {
+            current_screen: MenuScreen::TitleScreen,
+
             title: Text::new(
                 "Pong 2: The Enemy is Now Another", Vector2::new(0.5, 0.1), 
                 Color::GOLD, 26
@@ -247,14 +227,10 @@ impl MainMenu {
             singleplayer: Button::new("Singleplayer", Vector2::new(0.5, 0.4)),
             multiplayer: Button::new("Multiplayer", Vector2::new(0.5, 0.5)),
             quit: Button::new("Quit", Vector2::new(0.5, 0.6)),
-            
 
-            on_mltplyr_screen: false,
             local_multiplayer: Button::new("Local Multiplayer", Vector2::new(0.5, 0.4)),
             online_multiplayer: Button::new("Online Multiplayer", Vector2::new(0.5, 0.5)),
 
-
-            on_devices_screen: false,
             selected_devices: vec![-1, -1],
             select_devices_txts: vec![
                 Text::new("Choose Players Input:", Vector2::new(0.5, 0.25), Color::WHITE, 20),
