@@ -1,6 +1,7 @@
 mod input_system;
 mod game_objects;
 mod game_scenes;
+mod networking;
 mod utils;
 
 use game_scenes::*;
