@@ -1,11 +1,12 @@
-use std::vec;
+use std::{net::UdpSocket, vec};
+use regex::Regex;
 
 use super::*;
-use crate::utils::*;
+use crate::utils::{self, *};
 
 const HOVERING_BTN_COLOR: Color = Color::WHITE;
 const BTN_COLOR: Color = Color::new(150, 150, 150, 255);
-pub enum MenuScreen { TitleScreen, DeviceScreen, MultiplayerScreen }
+pub enum MenuScreen { TitleScreen, DeviceScreen, ConnectScreen, MultiplayerScreen }
 
 #[derive(Clone)]
 pub struct Text {
@@ -21,6 +22,19 @@ pub struct Button {
     rect: Rectangle,
     text: String,
     pos: Vector2,
+}
+
+#[derive(Clone)]
+pub struct TextField {
+    rects: Vec<Rectangle>,
+    pos: Vector2,
+
+    colors: Vec<Color>,
+    format: Regex,
+    text: Text,
+
+    value: String,
+    placeholder: String,
 }
 
 impl Text {
@@ -49,9 +63,10 @@ impl Button {
                 y: SCREEN_SIZE.y * relative_pos.y
             },
             
-            rect: Rectangle::new (
-                SCREEN_SIZE.x * relative_pos.x as f32 - (measure_text(&text, 20) + 30) as f32 / 2.0, 
-                SCREEN_SIZE.y * relative_pos.y - 10.0, measure_text(&text, 20) as f32 + 30.0, 40.0
+            rect: Rectangle::new (                                                      
+                SCREEN_SIZE.x * relative_pos.x as f32 - (measure_text(&text, 20) + 30) as f32 / 2.0,                 
+                SCREEN_SIZE.y * relative_pos.y - 10.0, measure_text(&text, 20) as f32 + 30.0, 
+                40.0
             )
         }
     }
@@ -60,6 +75,39 @@ impl Button {
         return self.rect.check_collision_point_rec(pointer);
     }
 }
+
+// Ipv4 rege ([0-9]{3})+.+(.+([0-9]{3})){2}
+impl TextField {
+    pub fn new(format: Regex, placeholder: &str, width: f32, text_size: i32,
+        relative_pos: Vector2, outline_tickness: f32, colors: Vec<Color>) -> TextField {
+        TextField {
+            pos: Vector2 {
+                x: SCREEN_SIZE.x * relative_pos.x - measure_text(&placeholder, text_size) as f32 / 2.0,
+                y: SCREEN_SIZE.y * relative_pos.y
+            },
+            
+            rects: vec![ 
+                Rectangle::new(
+                    SCREEN_SIZE.x * relative_pos.x as f32 - width /2.0,
+                    SCREEN_SIZE.y * relative_pos.y - 10.0,
+                    width, 40.0),
+
+                Rectangle::new(
+                    SCREEN_SIZE.x * relative_pos.x as f32 - (width - outline_tickness) / 2.0,
+                    SCREEN_SIZE.y * relative_pos.y - 10.0 + outline_tickness/2.0, 
+                    width - outline_tickness, 
+                    40.0 - outline_tickness
+                )
+            ],
+            
+            text: Text::new(placeholder, relative_pos, colors[0], text_size),
+            placeholder: placeholder.to_string(),
+            value: "".to_string(),
+            colors, format
+        }
+    }
+}
+
 
 impl GameScene for MainMenu {
     fn update(self: &mut Self, rl: &RaylibHandle) {
@@ -71,14 +119,18 @@ impl GameScene for MainMenu {
         // Check if buttons were clicked
         let mouse_pos = rl.get_mouse_position();
         match self.current_screen {
+            MenuScreen::ConnectScreen => {
+                    
+            },
+
             MenuScreen::MultiplayerScreen => {
-                if self.local_multiplayer.is_focused(mouse_pos) { self.start_game(); }
-                if self.online_multiplayer.is_focused(mouse_pos) { self.quit(); }
+                if self.local_multiplayer.is_focused(mouse_pos) { self.show_device_screen(true); }
+                if self.online_multiplayer.is_focused(mouse_pos) { self.show_connect_screen(); }
             },
             
             MenuScreen::TitleScreen => {
                 if self.singleplayer.is_focused(mouse_pos) { self.show_device_screen(true); }
-                if self.multiplayer.is_focused(mouse_pos) { self.show_device_screen(false); }
+                if self.multiplayer.is_focused(mouse_pos) { self.show_multiplayer_screen(); }
                 if self.quit.is_focused(mouse_pos) { self.quit(); }
             },
 
@@ -110,18 +162,29 @@ impl GameScene for MainMenu {
         let mut draw_handle = rl.begin_drawing(thread);
         draw_handle.clear_background(Color::BLACK);
         
-        // Get elements to draw
-        let elements = match self.current_screen {
+        // Get elements to draw vec<Text>, vec<Buttons>, vec<TextField>) 
+        let mut elements = match self.current_screen {
             MenuScreen::TitleScreen => (
                     vec![self.title.clone(), self.hiscore.clone()],
-                    vec![self.singleplayer.clone(), self.multiplayer.clone(), self.quit.clone()]
+                    vec![self.singleplayer.clone(), self.multiplayer.clone(), self.quit.clone()],
+                    vec![]
                 ),
+
             MenuScreen::DeviceScreen => (
                     self.select_devices_txts.clone(), 
-                    self.select_devices_btns.clone()
+                    self.select_devices_btns.clone(),
+                    vec![]
                 ),
+
+            MenuScreen::ConnectScreen => (
+                    self.connect_txts.clone(), 
+                    self.connect_btns.clone(),
+                    vec![self.remove_ip_field.clone()]
+                ),
+
             MenuScreen::MultiplayerScreen => (
-                    vec![], vec![self.local_multiplayer.clone(), self.online_multiplayer.clone()]
+                    vec![], vec![self.local_multiplayer.clone(), self.online_multiplayer.clone()], 
+                    vec![]
                 )
         };
 
@@ -136,6 +199,14 @@ impl GameScene for MainMenu {
             draw_handle.draw_text(&button.text, button.pos.x as i32, button.pos.y as i32,
                 20 as i32, if button.is_focused(mouse_pos) {HOVERING_BTN_COLOR} else {BTN_COLOR});
         }
+
+        // Draw text fields 
+        for field in &elements.2 {
+            draw_handle.draw_rectangle_rec(field.rects[0], field.colors[0]);
+            draw_handle.draw_rectangle_rec(field.rects[1], field.colors[1]);
+            draw_handle.draw_text(&field.text.text, field.text.pos.x as i32, field.text.pos.y as i32, 
+                field.text.size, field.text.color);
+        }
     }
 
     fn is_active(&self) -> bool { return self.is_active; }
@@ -149,6 +220,16 @@ impl GameScene for MainMenu {
 
 impl MainMenu {
     fn quit(self: &mut Self) { todo!("Implement this") }
+
+ 
+    fn show_connect_screen(self: &mut Self) {
+        self.current_screen = MenuScreen::ConnectScreen;
+    }
+
+    fn show_multiplayer_screen(self: &mut Self) {
+        self.current_screen = MenuScreen::MultiplayerScreen;
+    }
+
 
     fn start_game(self: &mut Self) {
         if self.selected_mode == GameMode::Multiplayer { 
@@ -212,7 +293,7 @@ impl MainMenu {
 
     pub fn new() -> MainMenu {
         return MainMenu {
-            current_screen: MenuScreen::TitleScreen,
+            current_screen: MenuScreen::ConnectScreen,
 
             title: Text::new(
                 "Pong 2: The Enemy is Now Another", Vector2::new(0.5, 0.1), 
@@ -231,9 +312,46 @@ impl MainMenu {
             local_multiplayer: Button::new("Local Multiplayer", Vector2::new(0.5, 0.4)),
             online_multiplayer: Button::new("Online Multiplayer", Vector2::new(0.5, 0.5)),
 
+            connect_txts: vec![
+                Text::new("Select Player and Device:", Vector2::new(0.3, 0.25), Color::WHITE, 20),
+                Text::new("Player 1 (Ball)", Vector2::new(0.3, 0.375), Color::new(10, 255, 255, 150), 20),
+                Text::new("Device", Vector2::new(0.3, 0.475), Color::GRAY, 20),
+
+                Text::new("Remote Player Address:", Vector2::new(0.75, 0.25), Color::WHITE, 20),
+                // Text::new("xxx.xxx.xxx.xxx", Vector2::new(0.75, 0.375), Color::GRAY, 20),
+
+                // Text::new("Remote client already\nselected player 1\nPing: 120 ms...", Vector2::new(0.3, 0.7), Color::GRAY, 20),
+                // Text::new("Started connection,\nwaiting response...\n", Vector2::new(0.3, 0.7), Color::GRAY, 20),
+                Text::new("\n(TODO)\n", Vector2::new(0.3, 0.7), Color::GRAY, 20),
+
+                Text::new("\nWaiting for connection...\n", Vector2::new(0.75, 0.7), Color::GRAY, 20)
+                // Text::new("Remote client already\nselected player 1\nPing: 120 ms...", Vector2::new(0.3, 0.7), Color::GRAY, 20),
+                // Text::new("Started connection,\nwaiting response...\n", Vector2::new(0.7, 0.7), Color::GRAY, 20),
+                // Text::new("Timeout. Did the other\nplayer forgot to press\nthe 'Connect' button?", Vector2::new(0.75, 0.7), Color::GRAY, 20),
+            ],
+            
+
+            remove_ip_field: TextField::new(Regex::new("([0-9]{3})+.+(.+([0-9]{3})){2}").expect("Invalid regex"), 
+                                            "---.---.---.---", 175.0, 20, Vector2::new(0.75, 0.375), 5.0, 
+                                            vec![Color::WHITE, Color::new(30, 30, 30, 255)]),
+
+            connect_btns: vec![
+                // Player Id
+                Button::new(">", Vector2::new(0.5, 0.375)),
+                Button::new("<", Vector2::new(0.1, 0.375)),
+                
+                // Input Device
+                Button::new(">", Vector2::new(0.5, 0.475)),
+                Button::new("<", Vector2::new(0.1, 0.475)),
+
+                Button::new("Connect", Vector2::new(0.75, 0.475)),
+            ],
+
+
+
             selected_devices: vec![-1, -1],
             select_devices_txts: vec![
-                Text::new("Choose Players Input:", Vector2::new(0.5, 0.25), Color::WHITE, 20),
+                Text::new("Select Players Input:", Vector2::new(0.5, 0.25), Color::WHITE, 20),
                 Text::new("Player 1", Vector2::new(0.5, 0.4), Color::new(10, 255, 255, 150), 20),
                 Text::new("Player 2", Vector2::new(0.5, 0.5), Color::new(255, 40, 0, 130), 20)
             ],
@@ -251,7 +369,7 @@ impl MainMenu {
             ],
             
             is_active: true,
-            selected_mode: GameMode::Singleplayer
-        }                
+            selected_mode: GameMode::Singleplayer,
+        }            
     }
 }

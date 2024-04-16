@@ -49,6 +49,10 @@ pub struct MainMenu {
     local_multiplayer: Button,
     online_multiplayer: Button,
 
+    connect_txts: Vec<Text>,
+    connect_btns: Vec<Button>,
+    remove_ip_field: TextField,
+
     select_devices_txts: Vec<Text>,
     select_devices_btns: Vec<Button>,
     selected_devices:Vec<i32>,
