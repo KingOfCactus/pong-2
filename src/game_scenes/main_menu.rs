@@ -1,8 +1,7 @@
-use std::{any::Any, net::UdpSocket, vec};
 use regex::Regex;
 
 use super::*;
-use crate::utils::{self, *};
+use crate::utils::*;
 
 const HOVERING_BTN_COLOR: Color = Color::WHITE;
 const BTN_COLOR: Color = Color::new(150, 150, 150, 255);
@@ -20,6 +19,7 @@ pub struct Text {
 #[derive(Clone)]
 pub struct Button {
     rect: Rectangle,
+    enabled: bool,
     text: String,
     pos: Vector2,
 }
@@ -56,7 +56,7 @@ impl Text {
 }
 
 impl Button {
-    pub fn new(text: &str, relative_pos: Vector2) -> Button {
+    pub fn new(enabled: bool, text: &str, relative_pos: Vector2) -> Button {
         Button {
             text: text.to_string(),
             pos: Vector2 {
@@ -68,7 +68,7 @@ impl Button {
                 SCREEN_SIZE.x * relative_pos.x as f32 - (measure_text(&text, 20) + 30) as f32 / 2.0,                 
                 SCREEN_SIZE.y * relative_pos.y - 10.0, measure_text(&text, 20) as f32 + 30.0, 
                 40.0
-            )
+            ), enabled
         }
     }
 
@@ -80,6 +80,7 @@ impl Button {
 // Ipv4 Regex ([0-9]{1,3})+([.]+[0-9]{1,3}){3}
 impl TextField {
     pub fn is_valid(self: &mut Self) -> bool{
+        println!("{}", self.format.is_match(&self.text.text));
         return self.format.is_match(&self.text.text);
     }
 
@@ -110,8 +111,6 @@ impl TextField {
                     else { (key - KEY_0_CODE).to_string() };
         
         let new_text = self.text.text.clone() + &input;
-        
-        println!("new text: '{}'; matches?: {}", new_text, self.format.is_match(&new_text));
         self.text.text = new_text;
     }
 
@@ -148,8 +147,10 @@ impl TextField {
 
 impl GameScene for MainMenu {
     fn update(self: &mut Self, rl: &RaylibHandle) {
-        // Return if mouse isn't clicking
         self.remove_ip_field.update(rl, rl.get_mouse_position());
+        self.connect_btns[4].enabled = self.remove_ip_field.is_valid();
+
+        // Return if mouse isn't clicking
         if !rl.is_mouse_button_pressed(MouseButton::MOUSE_LEFT_BUTTON) {
             return;
         }
@@ -158,7 +159,6 @@ impl GameScene for MainMenu {
         let mouse_pos = rl.get_mouse_position();
         match self.current_screen {
             MenuScreen::ConnectScreen => {
-                    self.remove_ip_field.update(rl, mouse_pos);
             },
 
             MenuScreen::MultiplayerScreen => {
@@ -235,7 +235,7 @@ impl GameScene for MainMenu {
         // Draw buttons 
         for button in &elements.1 {
             draw_handle.draw_text(&button.text, button.pos.x as i32, button.pos.y as i32,
-                20 as i32, if button.is_focused(mouse_pos) {HOVERING_BTN_COLOR} else {BTN_COLOR});
+                20 as i32, if button.is_focused(mouse_pos) && button.enabled {HOVERING_BTN_COLOR} else {BTN_COLOR});
         }
 
         // Draw text fields 
@@ -343,12 +343,12 @@ impl MainMenu {
                 Color::WHITE, 16
             ),
 
-            singleplayer: Button::new("Singleplayer", Vector2::new(0.5, 0.4)),
-            multiplayer: Button::new("Multiplayer", Vector2::new(0.5, 0.5)),
-            quit: Button::new("Quit", Vector2::new(0.5, 0.6)),
+            singleplayer: Button::new(true, "Singleplayer", Vector2::new(0.5, 0.4)),
+            multiplayer: Button::new(true, "Multiplayer", Vector2::new(0.5, 0.5)),
+            quit: Button::new(true, "Quit", Vector2::new(0.5, 0.6)),
 
-            local_multiplayer: Button::new("Local Multiplayer", Vector2::new(0.5, 0.4)),
-            online_multiplayer: Button::new("Online Multiplayer", Vector2::new(0.5, 0.5)),
+            local_multiplayer: Button::new(true, "Local Multiplayer", Vector2::new(0.5, 0.4)),
+            online_multiplayer: Button::new(true, "Online Multiplayer", Vector2::new(0.5, 0.5)),
 
             connect_txts: vec![
                 Text::new("Select Player and Device:", Vector2::new(0.3, 0.25), Color::WHITE, 20),
@@ -375,14 +375,14 @@ impl MainMenu {
 
             connect_btns: vec![
                 // Player Id
-                Button::new(">", Vector2::new(0.5, 0.375)),
-                Button::new("<", Vector2::new(0.1, 0.375)),
+                Button::new(true, ">", Vector2::new(0.5, 0.375)),
+                Button::new(true, "<", Vector2::new(0.1, 0.375)),
                 
                 // Input Device
-                Button::new(">", Vector2::new(0.5, 0.475)),
-                Button::new("<", Vector2::new(0.1, 0.475)),
+                Button::new(true, ">", Vector2::new(0.5, 0.475)),
+                Button::new(true, "<", Vector2::new(0.1, 0.475)),
 
-                Button::new("Connect", Vector2::new(0.75, 0.475)),
+                Button::new(false, "Connect", Vector2::new(0.75, 0.475)),
             ],
 
 
@@ -396,14 +396,14 @@ impl MainMenu {
 
             select_devices_btns: vec![
                 // Player 1
-                Button::new(">", Vector2::new(0.7, 0.4)),
-                Button::new("<", Vector2::new(0.3, 0.4)),
+                Button::new(true, ">", Vector2::new(0.7, 0.4)),
+                Button::new(true, "<", Vector2::new(0.3, 0.4)),
                 
                 // Player 2
-                Button::new(">", Vector2::new(0.7, 0.5)),
-                Button::new("<", Vector2::new(0.3, 0.5)),
+                Button::new(true, ">", Vector2::new(0.7, 0.5)),
+                Button::new(true, "<", Vector2::new(0.3, 0.5)),
 
-                Button::new("Start", Vector2::new(0.5, 0.75)),
+                Button::new(true, "Start", Vector2::new(0.5, 0.75)),
             ],
             
             is_active: true,
