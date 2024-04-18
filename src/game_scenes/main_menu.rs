@@ -77,19 +77,19 @@ impl Button {
     }
 }
 
-// Ipv4 Regex ([0-9]{1,3})+([.]+[0-9]{1,3}){3}
 impl TextField {
-    pub fn is_valid(self: &mut Self) -> bool{
-        println!("{}", self.format.is_match(&self.text.text));
-        return self.format.is_match(&self.text.text);
+    pub fn is_ipv4(self: &mut Self) -> bool{
+        let regex = Regex::new("([0-9]{1,3})+([.]+[0-9]{1,3}){3}").expect("Invalid Regular Expression");
+        return regex.is_match(&self.text.text);
+
+        todo!("consider moving this code out from the TextField struct");
     }
 
     pub fn update(self: &mut Self, rl: &RaylibHandle, pointer: Vector2) {        
-        const KEY_0_CODE: i32 = 48;
-        const KEY_9_CODE: i32 = 57;
-        let key = unsafe { ffi::GetKeyPressed() }; // gey_key_pressed() uses rl as mutable, can't use
-
-        if key == KeyboardKey::KEY_BACKSPACE as i32 { 
+        let ascii = unsafe { ffi::GetKeyPressed() as u8 }; // gey_key_pressed() uses rl as mutable, can't use
+        let input = (ascii as char).to_string(); 
+        
+        if ascii == KeyboardKey::KEY_BACKSPACE as u8 { 
             self.text.text.pop();
         }
 
@@ -97,18 +97,14 @@ impl TextField {
             return;
         }
 
-        let input_is_period = key == KeyboardKey::KEY_PERIOD as i32;
-        let input_is_number = KEY_0_CODE <= key && key <= KEY_9_CODE;
+        let valid_input = self.format.is_match(&input);
         let focused = self.rects[1].check_collision_point_rec(pointer);
 
-        if !focused || (!input_is_period && !input_is_number) { return; }
+        if !focused || !valid_input { return; }
 
         if self.text.text == self.placeholder {
             self.text.text = "".to_string();
         }
-
-        let input = if input_is_period { ".".to_string() } 
-                    else { (key - KEY_0_CODE).to_string() };
         
         let new_text = self.text.text.clone() + &input;
         self.text.text = new_text;
@@ -148,7 +144,7 @@ impl TextField {
 impl GameScene for MainMenu {
     fn update(self: &mut Self, rl: &RaylibHandle) {
         self.remove_ip_field.update(rl, rl.get_mouse_position());
-        self.connect_btns[4].enabled = self.remove_ip_field.is_valid();
+        self.connect_btns[4].enabled = self.remove_ip_field.is_ipv4();
 
         // Return if mouse isn't clicking
         if !rl.is_mouse_button_pressed(MouseButton::MOUSE_LEFT_BUTTON) {
@@ -369,7 +365,7 @@ impl MainMenu {
             ],
             
 
-            remove_ip_field: TextField::new(Regex::new("([0-9]{1,3})+([.]+[0-9]{1,3}){3}").expect("Invalid regex"), 
+            remove_ip_field: TextField::new(Regex::new("[.,0-9]").expect("Invalid regex"), 
                                             "---.---.---.---", 175.0, 20, Vector2::new(0.75, 0.375), 5.0, 
                                             vec![Color::WHITE, Color::new(30, 30, 30, 255)], 15),
 
