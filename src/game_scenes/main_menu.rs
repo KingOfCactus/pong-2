@@ -1,4 +1,4 @@
-use std::{net::UdpSocket, vec};
+use std::{any::Any, net::UdpSocket, vec};
 use regex::Regex;
 
 use super::*;
@@ -30,9 +30,10 @@ pub struct TextField {
     pos: Vector2,
 
     colors: Vec<Color>,
+    max_length: usize,
     format: Regex,
-    text: Text,
 
+    text: Text,
     value: String,
     placeholder: String,
 }
@@ -71,15 +72,51 @@ impl Button {
         }
     }
 
-    pub fn is_focused (self: &Self, pointer: Vector2) -> bool {
+    pub fn is_focused(self: &Self, pointer: Vector2) -> bool {
         return self.rect.check_collision_point_rec(pointer);
     }
 }
 
-// Ipv4 rege ([0-9]{3})+.+(.+([0-9]{3})){2}
+// Ipv4 Regex ([0-9]{1,3})+([.]+[0-9]{1,3}){3}
 impl TextField {
+    pub fn is_valid(self: &mut Self) -> bool{
+        return self.format.is_match(&self.text.text);
+    }
+
+    pub fn update(self: &mut Self, rl: &RaylibHandle, pointer: Vector2) {        
+        const KEY_0_CODE: i32 = 48;
+        const KEY_9_CODE: i32 = 57;
+        let key = unsafe { ffi::GetKeyPressed() }; // gey_key_pressed() uses rl as mutable, can't use
+
+        if key == KeyboardKey::KEY_BACKSPACE as i32 { 
+            self.text.text.pop();
+        }
+
+        else if self.text.text.len() >= self.max_length && self.text.text != self.placeholder {
+            return;
+        }
+
+        let input_is_period = key == KeyboardKey::KEY_PERIOD as i32;
+        let input_is_number = KEY_0_CODE <= key && key <= KEY_9_CODE;
+        let focused = self.rects[1].check_collision_point_rec(pointer);
+
+        if !focused || (!input_is_period && !input_is_number) { return; }
+
+        if self.text.text == self.placeholder {
+            self.text.text = "".to_string();
+        }
+
+        let input = if input_is_period { ".".to_string() } 
+                    else { (key - KEY_0_CODE).to_string() };
+        
+        let new_text = self.text.text.clone() + &input;
+        
+        println!("new text: '{}'; matches?: {}", new_text, self.format.is_match(&new_text));
+        self.text.text = new_text;
+    }
+
     pub fn new(format: Regex, placeholder: &str, width: f32, text_size: i32,
-        relative_pos: Vector2, outline_tickness: f32, colors: Vec<Color>) -> TextField {
+        relative_pos: Vector2, outline_tickness: f32, colors: Vec<Color>, max_length: usize) -> TextField {
         TextField {
             pos: Vector2 {
                 x: SCREEN_SIZE.x * relative_pos.x - measure_text(&placeholder, text_size) as f32 / 2.0,
@@ -99,10 +136,10 @@ impl TextField {
                     40.0 - outline_tickness
                 )
             ],
-            
+                
             text: Text::new(placeholder, relative_pos, colors[0], text_size),
             placeholder: placeholder.to_string(),
-            value: "".to_string(),
+            value: "".to_string(), max_length,
             colors, format
         }
     }
@@ -112,6 +149,7 @@ impl TextField {
 impl GameScene for MainMenu {
     fn update(self: &mut Self, rl: &RaylibHandle) {
         // Return if mouse isn't clicking
+        self.remove_ip_field.update(rl, rl.get_mouse_position());
         if !rl.is_mouse_button_pressed(MouseButton::MOUSE_LEFT_BUTTON) {
             return;
         }
@@ -120,7 +158,7 @@ impl GameScene for MainMenu {
         let mouse_pos = rl.get_mouse_position();
         match self.current_screen {
             MenuScreen::ConnectScreen => {
-                    
+                    self.remove_ip_field.update(rl, mouse_pos);
             },
 
             MenuScreen::MultiplayerScreen => {
@@ -331,9 +369,9 @@ impl MainMenu {
             ],
             
 
-            remove_ip_field: TextField::new(Regex::new("([0-9]{3})+.+(.+([0-9]{3})){2}").expect("Invalid regex"), 
+            remove_ip_field: TextField::new(Regex::new("([0-9]{1,3})+([.]+[0-9]{1,3}){3}").expect("Invalid regex"), 
                                             "---.---.---.---", 175.0, 20, Vector2::new(0.75, 0.375), 5.0, 
-                                            vec![Color::WHITE, Color::new(30, 30, 30, 255)]),
+                                            vec![Color::WHITE, Color::new(30, 30, 30, 255)], 15),
 
             connect_btns: vec![
                 // Player Id
