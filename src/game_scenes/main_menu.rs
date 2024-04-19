@@ -158,7 +158,7 @@ impl GameScene for MainMenu {
             },
 
             MenuScreen::MultiplayerScreen => {
-                if self.local_multiplayer.is_focused(mouse_pos) { self.show_device_screen(true); }
+                if self.local_multiplayer.is_focused(mouse_pos) { self.show_device_screen(false); }
                 if self.online_multiplayer.is_focused(mouse_pos) { self.show_connect_screen(); }
             },
             
@@ -327,7 +327,7 @@ impl MainMenu {
 
     pub fn new() -> MainMenu {
         return MainMenu {
-            current_screen: MenuScreen::ConnectScreen,
+            current_screen: MenuScreen::TitleScreen,
 
             title: Text::new(
                 "Pong 2: The Enemy is Now Another", Vector2::new(0.5, 0.1), 
