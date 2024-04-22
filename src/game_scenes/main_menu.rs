@@ -87,16 +87,23 @@ impl TextField {
 
     pub fn update(self: &mut Self, rl: &RaylibHandle, pointer: Vector2) {        
         let ascii = unsafe { ffi::GetKeyPressed() as u8 }; // gey_key_pressed() uses rl as mutable, can't use
-        let input = (ascii as char).to_string(); 
+        if ascii == 0 { return; }
         
-        if ascii == KeyboardKey::KEY_BACKSPACE as u8 { 
-            self.text.text.pop();
-        }
+        let is_placeholder = self.text.text == self.placeholder;        
+        if is_placeholder { self.text.text = "".to_string(); }
+        
+        let is_erasing = ascii == KeyboardKey::KEY_BACKSPACE as u8;
+        let is_full = self.text.text.len() >= self.max_length;
 
-        else if self.text.text.len() >= self.max_length && self.text.text != self.placeholder {
+        if is_erasing { 
+            self.text.text.pop();
+            self.text.centralize();
             return;
         }
+        else if is_full { return; }
 
+        
+        let input = (ascii as char).to_string(); 
         let valid_input = self.format.is_match(&input);
         let focused = self.rects[1].check_collision_point_rec(pointer);
 
@@ -108,6 +115,7 @@ impl TextField {
         
         let new_text = self.text.text.clone() + &input;
         self.text.text = new_text;
+        self.text.centralize();
     }
 
     pub fn new(format: Regex, placeholder: &str, width: f32, text_size: i32,
@@ -327,7 +335,7 @@ impl MainMenu {
 
     pub fn new() -> MainMenu {
         return MainMenu {
-            current_screen: MenuScreen::TitleScreen,
+            current_screen: MenuScreen::ConnectScreen,
 
             title: Text::new(
                 "Pong 2: The Enemy is Now Another", Vector2::new(0.5, 0.1), 
@@ -347,18 +355,18 @@ impl MainMenu {
             online_multiplayer: Button::new(true, "Online Multiplayer", Vector2::new(0.5, 0.5)),
 
             connect_txts: vec![
-                Text::new("Select Player and Device:", Vector2::new(0.3, 0.25), Color::WHITE, 20),
-                Text::new("Player 1 (Ball)", Vector2::new(0.3, 0.375), Color::new(10, 255, 255, 150), 20),
-                Text::new("Device", Vector2::new(0.3, 0.475), Color::GRAY, 20),
+                Text::new("Select Player and Device:", Vector2::new(0.270, 0.25), Color::WHITE, 20),
+                Text::new("Player 1 (Ball)", Vector2::new(0.270, 0.375), Color::new(10, 255, 255, 150), 20),
+                Text::new("Device", Vector2::new(0.270, 0.475), Color::GRAY, 20),
 
-                Text::new("Remote Player Address:", Vector2::new(0.75, 0.25), Color::WHITE, 20),
+                Text::new("Remote Player Address:", Vector2::new(0.7415, 0.25), Color::WHITE, 20),
                 // Text::new("xxx.xxx.xxx.xxx", Vector2::new(0.75, 0.375), Color::GRAY, 20),
 
                 // Text::new("Remote client already\nselected player 1\nPing: 120 ms...", Vector2::new(0.3, 0.7), Color::GRAY, 20),
                 // Text::new("Started connection,\nwaiting response...\n", Vector2::new(0.3, 0.7), Color::GRAY, 20),
-                Text::new("\n(TODO)\n", Vector2::new(0.3, 0.7), Color::GRAY, 20),
+                Text::new("\n(TODO)\n", Vector2::new(0.270, 0.7), Color::GRAY, 20),
 
-                Text::new("\nWaiting for connection...\n", Vector2::new(0.75, 0.7), Color::GRAY, 20)
+                Text::new("\nWaiting for connection...\n", Vector2::new(0.7415, 0.7), Color::GRAY, 20)
                 // Text::new("Remote client already\nselected player 1\nPing: 120 ms...", Vector2::new(0.3, 0.7), Color::GRAY, 20),
                 // Text::new("Started connection,\nwaiting response...\n", Vector2::new(0.7, 0.7), Color::GRAY, 20),
                 // Text::new("Timeout. Did the other\nplayer forgot to press\nthe 'Connect' button?", Vector2::new(0.75, 0.7), Color::GRAY, 20),
@@ -366,19 +374,19 @@ impl MainMenu {
             
 
             remove_ip_field: TextField::new(Regex::new("[.,0-9]").expect("Invalid regex"), 
-                                            "---.---.---.---", 175.0, 20, Vector2::new(0.75, 0.375), 5.0, 
+                                            "---.---.---.---", 185.0, 20, Vector2::new(0.7415, 0.375), 5.0, 
                                             vec![Color::WHITE, Color::new(30, 30, 30, 255)], 15),
 
             connect_btns: vec![
                 // Player Id
-                Button::new(true, ">", Vector2::new(0.5, 0.375)),
-                Button::new(true, "<", Vector2::new(0.1, 0.375)),
+                Button::new(true, ">", Vector2::new(0.470, 0.375)),
+                Button::new(true, "<", Vector2::new(0.070, 0.375)),
                 
                 // Input Device
-                Button::new(true, ">", Vector2::new(0.5, 0.475)),
-                Button::new(true, "<", Vector2::new(0.1, 0.475)),
+                Button::new(true, ">", Vector2::new(0.470, 0.475)),
+                Button::new(true, "<", Vector2::new(0.070, 0.475)),
 
-                Button::new(false, "Connect", Vector2::new(0.75, 0.475)),
+                Button::new(false, "Connect", Vector2::new(0.7415, 0.475)),
             ],
 
 
