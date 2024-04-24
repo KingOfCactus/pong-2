@@ -3,6 +3,7 @@ mod game_loop;
 
 use raylib::prelude::*;
 use crate::game_objects::*;
+use crate::screen_elements::*;
 use crate::input_system::PlayerInput;
 
 use self::main_menu::*;
