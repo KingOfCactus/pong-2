@@ -1,39 +1,5 @@
-use raylib::prelude::*;
-use regex::Regex;
-
+use super::*;
 use crate::utils::SCREEN_SIZE;
-
-#[derive(Clone)]
-pub struct Text {
-    pub relative_pos: Vector2,
-    pub color: Color,
-    pub text: String,
-    pub pos: Vector2,
-    pub size: i32
-}
-
-#[derive(Clone)]
-pub struct Button {
-    pub rect: Rectangle,
-    pub enabled: bool,
-    pub text: String,
-    pub pos: Vector2,
-}
-
-#[derive(Clone)]
-pub struct TextField {
-    pub rects: Vec<Rectangle>,
-    pub pos: Vector2,
-
-    pub colors: Vec<Color>,
-    pub max_length: usize,
-    pub format: Regex,
-
-    pub text: Text,
-    pub value: String,
-    pub placeholder: String,
-}
-
 
 impl Text {
     pub fn new(text: &str, relative_pos: Vector2, color: Color, size: i32,) -> Text {

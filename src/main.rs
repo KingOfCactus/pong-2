@@ -1,4 +1,4 @@
-mod screen_elements;
+mod ui_system;
 mod input_system;
 mod game_objects;
 mod game_scenes;
