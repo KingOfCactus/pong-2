@@ -8,12 +8,6 @@ const BTN_COLOR: Color = Color::new(150, 150, 150, 255);
 
 pub enum MenuScreen { TitleScreen, DeviceScreen, ConnectScreen, MultiplayerScreen }
 
-trait Screen {
-    fn update(self: &mut Self, rl: &RaylibHandle);
-    fn draw(self: &mut Self, rl: &RaylibHandle);
-}
-
-
 impl GameScene for MainMenu {
     fn update(self: &mut Self, rl: &RaylibHandle) {
         self.remove_ip_field.update(rl, rl.get_mouse_position());
