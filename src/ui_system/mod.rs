@@ -5,13 +5,17 @@ use regex::Regex;
 
 #[derive(Clone)]
 pub struct ScreenElements {
-    pub texts: Text,
-    pub rects: Rectangle
+    pub texts: Vec<Text>,
+    pub buttons: Vec<Button>,
+    pub fields: Vec<TextField>,
 }
 
 pub trait UIScreen {
+    fn is_active(&self) -> bool;
+    fn get_next_screen(&self, rl: &RaylibHandle) -> Box<dyn UIScreen>;
+
     fn update(self: &mut Self, rl: &RaylibHandle);
-    fn get_elements() -> ScreenElements;
+    fn get_elements(self: &mut Self) -> ScreenElements;
 }
 
 

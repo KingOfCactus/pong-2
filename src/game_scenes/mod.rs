@@ -40,12 +40,7 @@ pub struct GameLoop {
 }
 
 pub struct MainMenu {
-    title: Text,
-    hiscore: Text,
-    current_screen: MenuScreen,
-    singleplayer: Button,
-    multiplayer: Button,
-    quit: Button,
+    current_screen: Box<dyn UIScreen>,
 
     local_multiplayer: Button,
     online_multiplayer: Button,

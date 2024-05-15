@@ -8,52 +8,128 @@ const BTN_COLOR: Color = Color::new(150, 150, 150, 255);
 
 pub enum MenuScreen { TitleScreen, DeviceScreen, ConnectScreen, MultiplayerScreen }
 
-impl GameScene for MainMenu {
-    fn update(self: &mut Self, rl: &RaylibHandle) {
-        self.remove_ip_field.update(rl, rl.get_mouse_position());
-        self.connect_btns[4].enabled = self.remove_ip_field.is_ipv4();
+struct TitleScreen {
+    title_txt: Text,
+    hiscore_txt: Text,
 
-        // Return if mouse isn't clicking
+    singleplayer_btn: Button,
+    multiplayer_btn: Button,
+    quit_btn: Button,
+
+    is_active: bool,
+    next_screen: MenuScreen
+}
+
+struct DeviceScreen {
+    title_txt: Text,
+    device_1_txt: Text,
+    device_2_txt: Text,
+
+    selected_devices: Vec<i32>,
+    device_1_btns: Vec<Button>,
+    device_2_btns: Vec<Button>,
+    start_btn: Button,
+
+    is_active: bool,
+    next_screen: MenuScreen
+}
+
+impl UIScreen for TitleScreen {
+    fn update(self: &mut Self, rl: &RaylibHandle) {
+        let mouse_pos = rl.get_mouse_position();
         if !rl.is_mouse_button_pressed(MouseButton::MOUSE_LEFT_BUTTON) {
             return;
         }
         
-        // Check if buttons were clicked
-        let mouse_pos = rl.get_mouse_position();
-        match self.current_screen {
-            MenuScreen::ConnectScreen => {
-            },
+        if self.singleplayer_btn.is_focused(mouse_pos) { self.next_screen = MenuScreen::DeviceScreen; }
+        if self.multiplayer_btn.is_focused(mouse_pos) { self.next_screen = MenuScreen::MultiplayerScreen }
+        if self.quit_btn.is_focused(mouse_pos) { todo!("Implement this"); }
+    }
 
-            MenuScreen::MultiplayerScreen => {
-                if self.local_multiplayer.is_focused(mouse_pos) { self.show_device_screen(false); }
-                if self.online_multiplayer.is_focused(mouse_pos) { self.show_connect_screen(); }
-            },
-            
-            MenuScreen::TitleScreen => {
-                if self.singleplayer.is_focused(mouse_pos) { self.show_device_screen(true); }
-                if self.multiplayer.is_focused(mouse_pos) { self.show_multiplayer_screen(); }
-                if self.quit.is_focused(mouse_pos) { self.quit(); }
-            },
+    fn get_elements(self: &mut Self) -> ScreenElements {
+        return ScreenElements {
+            texts: vec![self.title_txt.clone(), self.hiscore_txt.clone()],
+            buttons: vec![self.singleplayer_btn.clone(), self.multiplayer_btn.clone(), self.quit_btn.clone()],
+            fields: vec![]
+        }
+    }
 
-            MenuScreen::DeviceScreen => {
-                // Player 1
-                if self.select_devices_btns[0].is_focused(mouse_pos) { self.select_input_device(0,  1, rl) } // '>'
-                if self.select_devices_btns[1].is_focused(mouse_pos) { self.select_input_device(0, -1, rl) } // '<'
-                
-                if self.selected_mode == GameMode::Multiplayer {
-                    // Player 2
-                    if self.select_devices_btns[2].is_focused(mouse_pos) { self.select_input_device(1,  1, rl) } // '>'
-                    if self.select_devices_btns[3].is_focused(mouse_pos) { self.select_input_device(1, -1, rl) } // '<'
-                    if self.select_devices_btns[4].is_focused(mouse_pos) { self.start_game() }
-                }
-                else { if self.select_devices_btns[2].is_focused(mouse_pos) { self.start_game() } }
-            }
+    fn is_active(&self) -> bool { self.is_active }
+    fn get_next_screen(&self, rl: &RaylibHandle) -> Box<dyn UIScreen> {
+        match self.next_screen {
+            MenuScreen::DeviceScreen => return Box::new(DeviceScreen::new()),
+            MenuScreen::MultiplayerScreen => todo!(""),
+            _ => todo!()
+        }
+    }
+}
+
+impl UIScreen for DeviceScreen {
+    fn is_active(&self) -> bool {
+        todo!()
+    }
+
+    fn get_next_screen(&self, rl: &RaylibHandle) -> Box<dyn UIScreen> {
+        todo!()
+    }
+
+    fn update(self: &mut Self, rl: &RaylibHandle) {
+        todo!()
+    }
+
+    fn get_elements(self: &mut Self) -> ScreenElements {
+        todo!()
+    }
+}
+
+
+impl GameScene for MainMenu {
+    fn update(self: &mut Self, rl: &RaylibHandle) {
+        if !self.current_screen.is_active() {
+            self.current_screen = self.current_screen.get_next_screen(&rl); 
         }
 
-        // Exit if mouse isn't clicking
-        if !rl.is_mouse_button_pressed(MouseButton::MOUSE_LEFT_BUTTON) { return; }
+        self.current_screen.update(&rl);
 
-        return;
+        // self.remove_ip_field.update(rl, rl.get_mouse_position());
+        // self.connect_btns[4].enabled = self.remove_ip_field.is_ipv4();
+
+        // // Return if mouse isn't clicking
+        // if !rl.is_mouse_button_pressed(MouseButton::MOUSE_LEFT_BUTTON) {
+        //     return;
+        // }
+        
+        // // Check if buttons were clicked
+        // let mouse_pos = rl.get_mouse_position();
+        // match self.current_screen {
+        //     MenuScreen::ConnectScreen => {
+        //     },
+
+        //     MenuScreen::MultiplayerScreen => {
+        //         if self.local_multiplayer.is_focused(mouse_pos) { self.show_device_screen(false); }
+        //         if self.online_multiplayer.is_focused(mouse_pos) { self.show_connect_screen(); }
+        //     },
+            
+        //     MenuScreen::TitleScreen => {
+        //         if self.singleplayer.is_focused(mouse_pos) { self.show_device_screen(true); }
+        //         if self.multiplayer.is_focused(mouse_pos) { self.show_multiplayer_screen(); }
+        //         if self.quit.is_focused(mouse_pos) { self.quit(); }
+        //     },
+
+        //     MenuScreen::DeviceScreen => {
+        //         // Player 1
+        //         if self.select_devices_btns[0].is_focused(mouse_pos) { self.select_input_device(0,  1, rl) } // '>'
+        //         if self.select_devices_btns[1].is_focused(mouse_pos) { self.select_input_device(0, -1, rl) } // '<'
+                
+        //         if self.selected_mode == GameMode::Multiplayer {
+        //             // Player 2
+        //             if self.select_devices_btns[2].is_focused(mouse_pos) { self.select_input_device(1,  1, rl) } // '>'
+        //             if self.select_devices_btns[3].is_focused(mouse_pos) { self.select_input_device(1, -1, rl) } // '<'
+        //             if self.select_devices_btns[4].is_focused(mouse_pos) { self.start_game() }
+        //         }
+        //         else { if self.select_devices_btns[2].is_focused(mouse_pos) { self.start_game() } }
+        //     }
+        // }
     }
 
     fn draw(&mut self, rl: &mut RaylibHandle, thread: &RaylibThread) {
@@ -63,46 +139,22 @@ impl GameScene for MainMenu {
         let mut draw_handle = rl.begin_drawing(thread);
         draw_handle.clear_background(Color::BLACK);
         
-        // Get elements to draw vec<Text>, vec<Buttons>, vec<TextField>) 
-        let mut elements = match self.current_screen {
-            MenuScreen::TitleScreen => (
-                    vec![self.title.clone(), self.hiscore.clone()],
-                    vec![self.singleplayer.clone(), self.multiplayer.clone(), self.quit.clone()],
-                    vec![]
-                ),
-
-            MenuScreen::DeviceScreen => (
-                    self.select_devices_txts.clone(), 
-                    self.select_devices_btns.clone(),
-                    vec![]
-                ),
-
-            MenuScreen::ConnectScreen => (
-                    self.connect_txts.clone(), 
-                    self.connect_btns.clone(),
-                    vec![self.remove_ip_field.clone()]
-                ),
-
-            MenuScreen::MultiplayerScreen => (
-                    vec![], vec![self.local_multiplayer.clone(), self.online_multiplayer.clone()], 
-                    vec![]
-                )
-        };
+        let mut elements = self.current_screen.get_elements();
 
         // Draw texts 
-        for text in &elements.0 {
+        for text in &elements.texts {
             draw_handle.draw_text(&text.text, text.pos.x as i32, text.pos.y as i32, 
                 text.size, text.color);
         }
 
         // Draw buttons 
-        for button in &elements.1 {
+        for button in &elements.buttons {
             draw_handle.draw_text(&button.text, button.pos.x as i32, button.pos.y as i32,
                 20 as i32, if button.is_focused(mouse_pos) && button.enabled {HOVERING_BTN_COLOR} else {BTN_COLOR});
         }
 
         // Draw text fields 
-        for field in &elements.2 {
+        for field in &elements.fields {
             draw_handle.draw_rectangle_rec(field.rects[0], field.colors[0]);
             draw_handle.draw_rectangle_rec(field.rects[1], field.colors[1]);
             draw_handle.draw_text(&field.text.text, field.text.pos.x as i32, field.text.pos.y as i32, 
@@ -119,19 +171,7 @@ impl GameScene for MainMenu {
     }
 }
 
-impl MainMenu {
-    fn quit(self: &mut Self) { todo!("Implement this") }
-
- 
-    fn show_connect_screen(self: &mut Self) {
-        self.current_screen = MenuScreen::ConnectScreen;
-    }
-
-    fn show_multiplayer_screen(self: &mut Self) {
-        self.current_screen = MenuScreen::MultiplayerScreen;
-    }
-
-
+impl MainMenu { 
     fn start_game(self: &mut Self) {
         if self.selected_mode == GameMode::Multiplayer { 
             // Make sure that the devices were selected
@@ -189,26 +229,12 @@ impl MainMenu {
         }
         else { self.selected_mode = GameMode::Multiplayer; }
 
-        self.current_screen = MenuScreen::DeviceScreen;
+        //self.current_screen = MenuScreen::DeviceScreen;
     }
 
     pub fn new() -> MainMenu {
         return MainMenu {
-            current_screen: MenuScreen::ConnectScreen,
-
-            title: Text::new(
-                "Pong 2: The Enemy is Now Another", Vector2::new(0.5, 0.1), 
-                Color::GOLD, 26
-            ),
-            
-            hiscore: Text::new(
-                &format!("HiScore: {}", get_highscore()), Vector2::new(0.5, 0.95),
-                Color::WHITE, 16
-            ),
-
-            singleplayer: Button::new(true, "Singleplayer", Vector2::new(0.5, 0.4)),
-            multiplayer: Button::new(true, "Multiplayer", Vector2::new(0.5, 0.5)),
-            quit: Button::new(true, "Quit", Vector2::new(0.5, 0.6)),
+            current_screen: Box::new(TitleScreen::new()),
 
             local_multiplayer: Button::new(true, "Local Multiplayer", Vector2::new(0.5, 0.4)),
             online_multiplayer: Button::new(true, "Online Multiplayer", Vector2::new(0.5, 0.5)),
@@ -272,5 +298,54 @@ impl MainMenu {
             is_active: true,
             selected_mode: GameMode::Singleplayer,
         }            
+    }
+}
+
+impl TitleScreen {
+    pub fn new() -> TitleScreen {
+        TitleScreen {
+            title_txt: Text::new(
+                "Pong 2: The Enemy is Now Another", Vector2::new(0.5, 0.1), 
+                Color::GOLD, 26
+            ),
+            
+            hiscore_txt: Text::new(
+                &format!("HiScore: {}", get_highscore()), Vector2::new(0.5, 0.95),
+                Color::WHITE, 16
+            ),
+
+            singleplayer_btn: Button::new(true, "Singleplayer", Vector2::new(0.5, 0.4)),
+            multiplayer_btn: Button::new(true, "Multiplayer", Vector2::new(0.5, 0.5)),
+            quit_btn: Button::new(true, "Quit", Vector2::new(0.5, 0.6)),
+            
+            is_active: true,
+            next_screen: MenuScreen::TitleScreen,
+        }
+    }
+}
+
+impl DeviceScreen {
+    pub fn new() -> DeviceScreen {
+        DeviceScreen {
+            title_txt: Text::new("Select Players Input:", Vector2::new(0.5, 0.25), Color::WHITE, 20),
+            device_1_txt: Text::new("Player 1", Vector2::new(0.5, 0.4), Color::new(010, 255, 255, 150), 20),
+            device_2_txt: Text::new("Player 2", Vector2::new(0.5, 0.5), Color::new(255, 040, 000, 130), 20),
+
+            device_1_btns: vec![
+                Button::new(true, ">", Vector2::new(0.7, 0.4)),
+                Button::new(true, "<", Vector2::new(0.3, 0.4)),
+            ],
+
+            device_2_btns: vec![
+                Button::new(true, ">", Vector2::new(0.7, 0.5)),
+                Button::new(true, "<", Vector2::new(0.3, 0.5)),
+            ],
+            
+            selected_devices: vec![-1, -1],
+            start_btn: Button::new(true, "Start", Vector2::new(0.5, 0.75)),
+
+            is_active: true,
+            next_screen: MenuScreen::DeviceScreen,
+        }
     }
 }
