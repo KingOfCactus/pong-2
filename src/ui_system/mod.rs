@@ -10,6 +10,12 @@ pub struct ScreenElements {
     pub fields: Vec<TextField>,
 }
 
+impl ScreenElements {
+    pub fn new(texts: Vec<Text>, buttons: Vec<Button>, fields: Vec<TextField>) -> ScreenElements {
+        ScreenElements { texts, buttons, fields }
+    }
+}
+
 pub trait UIScreen {
     fn is_active(&self) -> bool;
     fn get_next_screen(&self, rl: &RaylibHandle) -> Box<dyn UIScreen>;

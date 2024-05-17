@@ -1,3 +1,4 @@
+mod ui_screens;
 use regex::Regex;
 
 use super::*;
@@ -33,55 +34,6 @@ struct DeviceScreen {
     is_active: bool,
     next_screen: MenuScreen
 }
-
-impl UIScreen for TitleScreen {
-    fn update(self: &mut Self, rl: &RaylibHandle) {
-        let mouse_pos = rl.get_mouse_position();
-        if !rl.is_mouse_button_pressed(MouseButton::MOUSE_LEFT_BUTTON) {
-            return;
-        }
-        
-        if self.singleplayer_btn.is_focused(mouse_pos) { self.next_screen = MenuScreen::DeviceScreen; }
-        if self.multiplayer_btn.is_focused(mouse_pos) { self.next_screen = MenuScreen::MultiplayerScreen }
-        if self.quit_btn.is_focused(mouse_pos) { todo!("Implement this"); }
-    }
-
-    fn get_elements(self: &mut Self) -> ScreenElements {
-        return ScreenElements {
-            texts: vec![self.title_txt.clone(), self.hiscore_txt.clone()],
-            buttons: vec![self.singleplayer_btn.clone(), self.multiplayer_btn.clone(), self.quit_btn.clone()],
-            fields: vec![]
-        }
-    }
-
-    fn is_active(&self) -> bool { self.is_active }
-    fn get_next_screen(&self, rl: &RaylibHandle) -> Box<dyn UIScreen> {
-        match self.next_screen {
-            MenuScreen::DeviceScreen => return Box::new(DeviceScreen::new()),
-            MenuScreen::MultiplayerScreen => todo!(""),
-            _ => todo!()
-        }
-    }
-}
-
-impl UIScreen for DeviceScreen {
-    fn is_active(&self) -> bool {
-        todo!()
-    }
-
-    fn get_next_screen(&self, rl: &RaylibHandle) -> Box<dyn UIScreen> {
-        todo!()
-    }
-
-    fn update(self: &mut Self, rl: &RaylibHandle) {
-        todo!()
-    }
-
-    fn get_elements(self: &mut Self) -> ScreenElements {
-        todo!()
-    }
-}
-
 
 impl GameScene for MainMenu {
     fn update(self: &mut Self, rl: &RaylibHandle) {
@@ -135,11 +87,11 @@ impl GameScene for MainMenu {
     fn draw(&mut self, rl: &mut RaylibHandle, thread: &RaylibThread) {
         let mouse_pos = rl.get_mouse_position();
         
-        // Clear screen
+        let mut elements = self.current_screen.get_elements();
         let mut draw_handle = rl.begin_drawing(thread);
         draw_handle.clear_background(Color::BLACK);
         
-        let mut elements = self.current_screen.get_elements();
+        
 
         // Draw texts 
         for text in &elements.texts {
@@ -170,6 +122,7 @@ impl GameScene for MainMenu {
         return Box::new(GameLoop::new(self.selected_mode, devices));
     }
 }
+
 
 impl MainMenu { 
     fn start_game(self: &mut Self) {
@@ -209,28 +162,28 @@ impl MainMenu {
         text.centralize();
     }
 
-    fn show_device_screen(self: &mut Self, is_singleplayer: bool) {
-        let buttons = &mut self.select_devices_btns;
-        let texts = &mut self.select_devices_txts;
+    // fn show_device_screen(self: &mut Self, is_singleplayer: bool) {
+    //     let buttons = &mut self.select_devices_btns;
+    //     let texts = &mut self.select_devices_txts;
 
-        if is_singleplayer {
-            self.selected_mode = GameMode::Singleplayer;
+    //     if is_singleplayer {
+    //         self.selected_mode = GameMode::Singleplayer;
 
-            // Remove player 2 text and buttons
-            let mut len = buttons.len() as usize - 1;
-            buttons[len].pos.y = buttons[len-1].pos.y * 1.075;
-            buttons[len].rect.y = buttons[len].pos.y;
+    //         // Remove player 2 text and buttons
+    //         let mut len = buttons.len() as usize - 1;
+    //         buttons[len].pos.y = buttons[len-1].pos.y * 1.075;
+    //         buttons[len].rect.y = buttons[len].pos.y;
 
-            buttons.remove(len - 1);
-            buttons.remove(len - 2);
+    //         buttons.remove(len - 1);
+    //         buttons.remove(len - 2);
 
-            len = texts.len() as usize - 1;
-            texts.remove(len);
-        }
-        else { self.selected_mode = GameMode::Multiplayer; }
+    //         len = texts.len() as usize - 1;
+    //         texts.remove(len);
+    //     }
+    //     else { self.selected_mode = GameMode::Multiplayer; }
 
-        //self.current_screen = MenuScreen::DeviceScreen;
-    }
+    //     //self.current_screen = MenuScreen::DeviceScreen;
+    // }
 
     pub fn new() -> MainMenu {
         return MainMenu {
@@ -298,54 +251,5 @@ impl MainMenu {
             is_active: true,
             selected_mode: GameMode::Singleplayer,
         }            
-    }
-}
-
-impl TitleScreen {
-    pub fn new() -> TitleScreen {
-        TitleScreen {
-            title_txt: Text::new(
-                "Pong 2: The Enemy is Now Another", Vector2::new(0.5, 0.1), 
-                Color::GOLD, 26
-            ),
-            
-            hiscore_txt: Text::new(
-                &format!("HiScore: {}", get_highscore()), Vector2::new(0.5, 0.95),
-                Color::WHITE, 16
-            ),
-
-            singleplayer_btn: Button::new(true, "Singleplayer", Vector2::new(0.5, 0.4)),
-            multiplayer_btn: Button::new(true, "Multiplayer", Vector2::new(0.5, 0.5)),
-            quit_btn: Button::new(true, "Quit", Vector2::new(0.5, 0.6)),
-            
-            is_active: true,
-            next_screen: MenuScreen::TitleScreen,
-        }
-    }
-}
-
-impl DeviceScreen {
-    pub fn new() -> DeviceScreen {
-        DeviceScreen {
-            title_txt: Text::new("Select Players Input:", Vector2::new(0.5, 0.25), Color::WHITE, 20),
-            device_1_txt: Text::new("Player 1", Vector2::new(0.5, 0.4), Color::new(010, 255, 255, 150), 20),
-            device_2_txt: Text::new("Player 2", Vector2::new(0.5, 0.5), Color::new(255, 040, 000, 130), 20),
-
-            device_1_btns: vec![
-                Button::new(true, ">", Vector2::new(0.7, 0.4)),
-                Button::new(true, "<", Vector2::new(0.3, 0.4)),
-            ],
-
-            device_2_btns: vec![
-                Button::new(true, ">", Vector2::new(0.7, 0.5)),
-                Button::new(true, "<", Vector2::new(0.3, 0.5)),
-            ],
-            
-            selected_devices: vec![-1, -1],
-            start_btn: Button::new(true, "Start", Vector2::new(0.5, 0.75)),
-
-            is_active: true,
-            next_screen: MenuScreen::DeviceScreen,
-        }
     }
 }
