@@ -25,19 +25,14 @@ impl TitleScreen {
 
 impl UIScreen for TitleScreen {
     fn update(self: &mut Self, rl: &RaylibHandle) {
-        let mouse_pos = rl.get_mouse_position();
-        if !rl.is_mouse_button_pressed(MouseButton::MOUSE_LEFT_BUTTON) {
-            return;
-        }
-        
-        if self.singleplayer_btn.is_focused(mouse_pos) { self.next_screen = MenuScreen::DeviceScreen; }
-        if self.multiplayer_btn.is_focused(mouse_pos) { self.next_screen = MenuScreen::MultiplayerScreen }
-        if self.quit_btn.is_focused(mouse_pos) { todo!("Implement this"); }
+        if self.singleplayer_btn.is_pressed(&rl) { self.next_screen = MenuScreen::DeviceScreen; }
+        if self.multiplayer_btn.is_focused(&rl) { self.next_screen = MenuScreen::MultiplayerScreen }
+        if self.quit_btn.is_focused(&rl) { todo!("Implement this"); }
     }
 
     
-    fn get_elements(self: &mut Self) -> ScreenElements {
-        ScreenElements::new(
+    fn get_elements(self: &mut Self, rl: &RaylibHandle) -> ScreenElements {
+        ScreenElements::new(rl,
             vec![self.title_txt.clone(), self.hiscore_txt.clone()],
             vec![self.singleplayer_btn.clone(), self.multiplayer_btn.clone(), self.quit_btn.clone()], 
             vec![]
@@ -91,7 +86,7 @@ impl UIScreen for DeviceScreen {
         todo!()
     }
 
-    fn get_elements(self: &mut Self) -> ScreenElements {
+    fn get_elements(self: &mut Self, rl: &RaylibHandle) -> ScreenElements {
         todo!()
     }
 

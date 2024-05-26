@@ -19,6 +19,10 @@ impl Text {
 }
 
 impl Button {
+    const DEFAULT_COLOR:Color = Color::new(150, 150, 150, 255);
+    const FOCUSED_COLOR:Color = Color::WHITE;
+    const DISABLED_COLOR:Color = Color::RED;
+
     pub fn new(enabled: bool, text: &str, relative_pos: Vector2) -> Button {
         Button {
             text: text.to_string(),
@@ -35,8 +39,26 @@ impl Button {
         }
     }
 
-    pub fn is_focused(self: &Self, pointer: Vector2) -> bool {
-        return self.rect.check_collision_point_rec(pointer);
+    pub fn get_color(self: &Self, rl: &RaylibHandle) -> Color {
+        if self.is_focused(&rl) {
+            return Self::FOCUSED_COLOR;
+        }
+
+        if !self.enabled {
+            return Self::DISABLED_COLOR;
+        }
+
+        return Self::DEFAULT_COLOR
+    }
+
+    pub fn is_pressed(self: &Self, rl: &RaylibHandle) -> bool {
+        let clicked = rl.is_mouse_button_pressed(MouseButton::MOUSE_LEFT_BUTTON);
+        return self.is_focused(rl) && clicked;
+    }
+
+    pub fn is_focused(self: &Self, rl: &RaylibHandle) -> bool {
+        let mouse_pos = rl.get_mouse_position();
+        return self.rect.check_collision_point_rec(mouse_pos);
     }
 }
 

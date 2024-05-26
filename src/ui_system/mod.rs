@@ -6,13 +6,23 @@ use regex::Regex;
 #[derive(Clone)]
 pub struct ScreenElements {
     pub texts: Vec<Text>,
-    pub buttons: Vec<Button>,
     pub fields: Vec<TextField>,
+    pub buttons: Vec<(Button, Color)>,
 }
 
 impl ScreenElements {
-    pub fn new(texts: Vec<Text>, buttons: Vec<Button>, fields: Vec<TextField>) -> ScreenElements {
-        ScreenElements { texts, buttons, fields }
+    pub fn new(rl: &RaylibHandle, texts: Vec<Text>, buttons: Vec<Button>, fields: Vec<TextField>) -> ScreenElements {
+        let mut _buttons = Vec::with_capacity(buttons.len());
+
+        for i in 0..buttons.len() {
+            _buttons[i] = (buttons[i].clone(), buttons[i].get_color(rl));
+        }
+
+        return ScreenElements{
+            texts: texts, 
+            fields: fields, 
+            buttons: _buttons
+        };
     }
 }
 
@@ -21,7 +31,7 @@ pub trait UIScreen {
     fn get_next_screen(&self, rl: &RaylibHandle) -> Box<dyn UIScreen>;
 
     fn update(self: &mut Self, rl: &RaylibHandle);
-    fn get_elements(self: &mut Self) -> ScreenElements;
+    fn get_elements(self: &mut Self, rl: &RaylibHandle) -> ScreenElements;
 }
 
 

@@ -4,9 +4,6 @@ use regex::Regex;
 use super::*;
 use crate::utils::*;
 
-const HOVERING_BTN_COLOR: Color = Color::WHITE;
-const BTN_COLOR: Color = Color::new(150, 150, 150, 255);
-
 pub enum MenuScreen { TitleScreen, DeviceScreen, ConnectScreen, MultiplayerScreen }
 
 struct TitleScreen {
@@ -87,7 +84,7 @@ impl GameScene for MainMenu {
     fn draw(&mut self, rl: &mut RaylibHandle, thread: &RaylibThread) {
         let mouse_pos = rl.get_mouse_position();
         
-        let mut elements = self.current_screen.get_elements();
+        let mut elements = self.current_screen.get_elements(rl);
         let mut draw_handle = rl.begin_drawing(thread);
         draw_handle.clear_background(Color::BLACK);
         
@@ -100,9 +97,9 @@ impl GameScene for MainMenu {
         }
 
         // Draw buttons 
-        for button in &elements.buttons {
+        for (button, color) in &elements.buttons {
             draw_handle.draw_text(&button.text, button.pos.x as i32, button.pos.y as i32,
-                20 as i32, if button.is_focused(mouse_pos) && button.enabled {HOVERING_BTN_COLOR} else {BTN_COLOR});
+                20 as i32, color);
         }
 
         // Draw text fields 
