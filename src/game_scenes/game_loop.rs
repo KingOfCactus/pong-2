@@ -187,6 +187,11 @@ impl GameLoop {
     }
     
     pub fn new(selected_mode: GameMode, selected_devices: (Box<dyn InputDevice>, Box<dyn InputDevice>)) -> GameLoop {
+        // Just in case
+        if selected_mode == GameMode::None {
+            panic!("GameMode wasn't selected. How did you manage to do this?");
+        }
+        
         return GameLoop {
              score: 0,
              checkpoint: 0,
