@@ -19,10 +19,6 @@ impl Text {
 }
 
 impl Button {
-    const DEFAULT_COLOR:Color = Color::new(150, 150, 150, 255);
-    const FOCUSED_COLOR:Color = Color::WHITE;
-    const DISABLED_COLOR:Color = Color::RED;
-
     pub fn new(enabled: bool, text: &str, relative_pos: Vector2) -> Button {
         Button {
             text: text.to_string(),
@@ -41,14 +37,14 @@ impl Button {
 
     pub fn get_color(self: &Self, rl: &RaylibHandle) -> Color {
         if self.is_focused(&rl) {
-            return Self::FOCUSED_COLOR;
+            return ScreenElements::FOCUSED_COLOR;
         }
 
         if !self.enabled {
-            return Self::DISABLED_COLOR;
+            return ScreenElements::DISABLED_COLOR;
         }
 
-        return Self::DEFAULT_COLOR
+        return ScreenElements::DEFAULT_COLOR
     }
 
     pub fn is_pressed(self: &Self, rl: &RaylibHandle) -> bool {

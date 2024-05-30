@@ -9,7 +9,7 @@ use crate::input_system::PlayerInput;
 use self::main_menu::*;
 
 #[derive(Clone, Copy, PartialEq)]
-pub enum GameMode { Singleplayer, Multiplayer }
+pub enum GameMode { None, Singleplayer, Multiplayer }
 
 pub trait GameScene {
     fn is_active(&self) -> bool;

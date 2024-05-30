@@ -1,6 +1,18 @@
 use super::*;
 
 impl TitleScreen {
+    fn pressed_singleplayer(self: &mut Self) {
+        self.selected_mode = GameMode::Singleplayer;
+        self.next_screen = MenuScreen::DeviceScreen;
+        self.is_active = false;
+    }
+
+    fn pressed_multiplayer(self: &mut Self) {
+        self.selected_mode = GameMode::Multiplayer;
+        self.next_screen = MenuScreen::DeviceScreen;
+        self.is_active = false;
+    }
+
     pub fn new() -> TitleScreen {
         TitleScreen {
             title_txt: Text::new(
@@ -18,6 +30,7 @@ impl TitleScreen {
             quit_btn: Button::new(true, "Quit", Vector2::new(0.5, 0.6)),
             
             is_active: true,
+            selected_mode: GameMode::None,
             next_screen: MenuScreen::TitleScreen,
         }
     }
@@ -25,9 +38,9 @@ impl TitleScreen {
 
 impl UIScreen for TitleScreen {
     fn update(self: &mut Self, rl: &RaylibHandle) {
-        if self.singleplayer_btn.is_pressed(&rl) { self.next_screen = MenuScreen::DeviceScreen; }
-        if self.multiplayer_btn.is_focused(&rl) { self.next_screen = MenuScreen::MultiplayerScreen }
-        if self.quit_btn.is_focused(&rl) { todo!("Implement this"); }
+        if self.singleplayer_btn.is_pressed(&rl) { self.pressed_singleplayer(); }
+        if self.multiplayer_btn.is_pressed(&rl) { self.pressed_multiplayer() }
+        if self.quit_btn.is_pressed(&rl) { todo!("Implement this"); }
     }
 
     
@@ -41,7 +54,7 @@ impl UIScreen for TitleScreen {
 
     fn get_next_screen(&self, rl: &RaylibHandle) -> Box<dyn UIScreen> {
         match self.next_screen {
-            MenuScreen::DeviceScreen => return Box::new(DeviceScreen::new()),
+            MenuScreen::DeviceScreen => return Box::new(DeviceScreen::new(self.selected_mode)),
             MenuScreen::MultiplayerScreen => todo!(),
             _ => todo!()
         }
@@ -52,11 +65,23 @@ impl UIScreen for TitleScreen {
 
 
 impl DeviceScreen {
-    pub fn new() -> DeviceScreen {
-        DeviceScreen {
+    pub fn new(mode: GameMode) -> DeviceScreen {
+        let mut is_singleplayer = false;
+        let mut device_txt_colors = vec![
+            Color::new(010, 255, 255, 150), // Player 1
+            Color::new(255, 040, 000, 130)  // Player 2
+        ];
+        
+        if mode != GameMode::Multiplayer {
+            device_txt_colors[1] = ScreenElements::DISABLED_COLOR;
+            is_singleplayer = true;
+
+        }
+
+        return DeviceScreen {
             title_txt: Text::new("Select Players Input:", Vector2::new(0.5, 0.25), Color::WHITE, 20),
-            device_1_txt: Text::new("Player 1", Vector2::new(0.5, 0.4), Color::new(010, 255, 255, 150), 20),
-            device_2_txt: Text::new("Player 2", Vector2::new(0.5, 0.5), Color::new(255, 040, 000, 130), 20),
+            device_1_txt: Text::new("Player 1", Vector2::new(0.5, 0.4), device_txt_colors[0], 20),
+            device_2_txt: Text::new("Player 2", Vector2::new(0.5, 0.5), device_txt_colors[1], 20),
 
             device_1_btns: vec![
                 Button::new(true, ">", Vector2::new(0.7, 0.4)),
@@ -64,8 +89,8 @@ impl DeviceScreen {
             ],
 
             device_2_btns: vec![
-                Button::new(true, ">", Vector2::new(0.7, 0.5)),
-                Button::new(true, "<", Vector2::new(0.3, 0.5)),
+                Button::new(!is_singleplayer, ">", Vector2::new(0.7, 0.5)),
+                Button::new(!is_singleplayer, "<", Vector2::new(0.3, 0.5)),
             ],
             
             selected_devices: vec![-1, -1],
@@ -73,7 +98,7 @@ impl DeviceScreen {
 
             is_active: true,
             next_screen: MenuScreen::DeviceScreen,
-        }
+        };
     }
 }
 
@@ -83,11 +108,18 @@ impl UIScreen for DeviceScreen {
     }
 
     fn update(self: &mut Self, rl: &RaylibHandle) {
-        todo!()
+        // TO DO
     }
 
     fn get_elements(self: &mut Self, rl: &RaylibHandle) -> ScreenElements {
-        todo!()
+        let mut buttons: Vec<Button> = vec![self.start_btn.clone()];
+        buttons.append(&mut self.device_1_btns.clone());
+        buttons.append(&mut self.device_2_btns.clone());
+
+        return ScreenElements::new(rl, 
+            vec![self.title_txt.clone(), self.device_1_txt.clone(), self.device_2_txt.clone()], 
+            buttons, vec![]
+        )
     }
 
     fn is_active(&self) -> bool { self.is_active }

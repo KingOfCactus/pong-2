@@ -11,6 +11,10 @@ pub struct ScreenElements {
 }
 
 impl ScreenElements {
+    pub const DEFAULT_COLOR:Color = Color::new(150, 150, 150, 255);
+    pub const FOCUSED_COLOR:Color = Color::new(255, 255, 255, 255);
+    pub const DISABLED_COLOR:Color = Color::new(50, 50, 50, 255);
+
     pub fn new(rl: &RaylibHandle, texts: Vec<Text>, buttons: Vec<Button>, fields: Vec<TextField>) -> ScreenElements {
         let length = buttons.len();
         let mut _buttons = Vec::with_capacity(length);

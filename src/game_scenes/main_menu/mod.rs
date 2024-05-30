@@ -9,8 +9,9 @@ pub enum MenuScreen { TitleScreen, DeviceScreen, ConnectScreen, MultiplayerScree
 struct TitleScreen {
     title_txt: Text,
     hiscore_txt: Text,
+    selected_mode: GameMode,
 
-    singleplayer_btn: Button,
+    singleplayer_btn: Button,  
     multiplayer_btn: Button,
     quit_btn: Button,
 
@@ -158,29 +159,6 @@ impl MainMenu {
         text.text = avaliable_devices[device_id as usize].get_name();
         text.centralize();
     }
-
-    // fn show_device_screen(self: &mut Self, is_singleplayer: bool) {
-    //     let buttons = &mut self.select_devices_btns;
-    //     let texts = &mut self.select_devices_txts;
-
-    //     if is_singleplayer {
-    //         self.selected_mode = GameMode::Singleplayer;
-
-    //         // Remove player 2 text and buttons
-    //         let mut len = buttons.len() as usize - 1;
-    //         buttons[len].pos.y = buttons[len-1].pos.y * 1.075;
-    //         buttons[len].rect.y = buttons[len].pos.y;
-
-    //         buttons.remove(len - 1);
-    //         buttons.remove(len - 2);
-
-    //         len = texts.len() as usize - 1;
-    //         texts.remove(len);
-    //     }
-    //     else { self.selected_mode = GameMode::Multiplayer; }
-
-    //     //self.current_screen = MenuScreen::DeviceScreen;
-    // }
 
     pub fn new() -> MainMenu {
         return MainMenu {
