@@ -12,10 +12,11 @@ pub struct ScreenElements {
 
 impl ScreenElements {
     pub fn new(rl: &RaylibHandle, texts: Vec<Text>, buttons: Vec<Button>, fields: Vec<TextField>) -> ScreenElements {
-        let mut _buttons = Vec::with_capacity(buttons.len());
-
-        for i in 0..buttons.len() {
-            _buttons[i] = (buttons[i].clone(), buttons[i].get_color(rl));
+        let length = buttons.len();
+        let mut _buttons = Vec::with_capacity(length);
+        
+        for i in 0..length {
+            _buttons.push((buttons[i].clone(), buttons[i].get_color(rl)));
         }
 
         return ScreenElements{
