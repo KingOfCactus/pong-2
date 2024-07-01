@@ -1,4 +1,6 @@
 mod ui_screens;
+use std::any::Any;
+
 use regex::Regex;
 
 use super::*;
@@ -30,13 +32,18 @@ struct DeviceScreen {
     start_btn: Button,
 
     is_active: bool,
-    next_screen: MenuScreen
+    selected_gamemode: GameMode
 }
 
 impl GameScene for MainMenu {
     fn update(self: &mut Self, rl: &RaylibHandle) {
         if !self.current_screen.is_active() {
-            self.current_screen = self.current_screen.get_next_screen(&rl); 
+            if self.current_screen.goes_to_scene() 
+            {
+                self.is_active = false;
+                return;
+            }
+            self.current_screen = self.current_screen.get_next_screen(&rl);  
         }
 
         self.current_screen.update(&rl);
@@ -114,52 +121,12 @@ impl GameScene for MainMenu {
 
     fn is_active(&self) -> bool { return self.is_active; }
     fn get_next_scene(&self, rl: &RaylibHandle) -> Box<dyn GameScene> { 
-        let devices = (get_device_by_id(self.selected_devices[0]),
-                           get_device_by_id(self.selected_devices[1]));
-
-        return Box::new(GameLoop::new(self.selected_mode, devices));
+        return self.current_screen.get_next_scene(rl);
     }
 }
 
 
 impl MainMenu { 
-    fn start_game(self: &mut Self) {
-        if self.selected_mode == GameMode::Multiplayer { 
-            // Make sure that the devices were selected
-            if self.selected_devices[0] == -1 || self.selected_devices[1] == -1 {
-                return;
-            }
-        }
-        else {
-            // Make sure that the devices were selected
-            if self.selected_devices[0] == -1 { return; }
-            self.selected_devices[1] = self.selected_devices[0];
-        }
-
-        self.is_active = false;
-    }
-
-    fn select_input_device(self: &mut Self, player_id: usize, step: i32, rl: &RaylibHandle) {
-        let mut avaliable_devices = get_connected_devices(&rl);
-        let mut device_id = self.selected_devices[player_id] + step;
-        let devices_amount = avaliable_devices.len() as i32;
-
-        if device_id < 0 { device_id = devices_amount - 1 }
-        if device_id >= devices_amount { device_id = 0 }
-        self.selected_devices[player_id] = device_id;
-        println!("{}, {}", self.selected_devices[0], self.selected_devices[1]);
-
-        // Make sure the device wasn't selected already
-        if self.selected_devices[0] == self.selected_devices[1] {
-            let other_player = i32::abs(player_id as i32 - 1) as usize;
-            self.select_input_device(other_player, step * -1, rl);
-        }
-        
-        let text = &mut self.select_devices_txts[player_id + 1];
-        text.text = avaliable_devices[device_id as usize].get_name();
-        text.centralize();
-    }
-
     pub fn new() -> MainMenu {
         return MainMenu {
             current_screen: Box::new(TitleScreen::new()),

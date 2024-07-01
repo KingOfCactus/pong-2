@@ -3,6 +3,8 @@ mod elements;
 use raylib::prelude::*;
 use regex::Regex;
 
+use crate::GameScene;
+
 #[derive(Clone)]
 pub struct ScreenElements {
     pub texts: Vec<Text>,
@@ -33,7 +35,10 @@ impl ScreenElements {
 
 pub trait UIScreen {
     fn is_active(&self) -> bool;
+    fn goes_to_scene(&self) -> bool;
+
     fn get_next_screen(&self, rl: &RaylibHandle) -> Box<dyn UIScreen>;
+    fn get_next_scene(&self, rl: &RaylibHandle) -> Box<dyn GameScene>;
 
     fn update(self: &mut Self, rl: &RaylibHandle);
     fn get_elements(self: &mut Self, rl: &RaylibHandle) -> ScreenElements;

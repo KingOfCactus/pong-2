@@ -1,3 +1,5 @@
+use std::panic;
+
 use super::*;
 
 impl TitleScreen {
@@ -38,9 +40,9 @@ impl TitleScreen {
 
 impl UIScreen for TitleScreen {
     fn update(self: &mut Self, rl: &RaylibHandle) {
-        if self.singleplayer_btn.is_pressed(&rl) { self.pressed_singleplayer(); }
-        if self.multiplayer_btn.is_pressed(&rl) { self.pressed_multiplayer() }
-        if self.quit_btn.is_pressed(&rl) { todo!("Implement this"); }
+             if self.singleplayer_btn.is_pressed(&rl) { self.pressed_singleplayer(); }
+        else if self.multiplayer_btn.is_pressed(&rl) { self.pressed_multiplayer() }
+        else if self.quit_btn.is_pressed(&rl) { todo!("Implement this"); }
     }
 
     
@@ -60,11 +62,44 @@ impl UIScreen for TitleScreen {
         }
     }
 
+    fn get_next_scene(&self, rl: &RaylibHandle) -> Box<dyn GameScene> {
+        panic!("This screen doesn't lead to a scene, should've called 'get_next_screen' instead.");
+    }
     fn is_active(&self) -> bool { self.is_active }
+    fn goes_to_scene(&self) -> bool { false }
 }
 
 
 impl DeviceScreen {
+    fn update_start_btn(self: &mut Self) {
+        if self.selected_gamemode == GameMode::Singleplayer {
+            self.start_btn.enabled = self.selected_devices[0] >= 0;
+        }
+        else {
+            self.start_btn.enabled = self.selected_devices[0] >= 0 && self.selected_devices[1] >= 0;
+        }
+    }
+
+    fn change_device(self: &mut Self, rl: &RaylibHandle, player_id: usize, step: i32) {
+        let mut connected_devices = get_connected_devices(&rl);
+        let devices_amount = connected_devices.len() as i32;
+
+        let mut selected_id = self.selected_devices[player_id] + step;
+        if selected_id < 0 { selected_id = devices_amount - 1 }
+        if selected_id >= devices_amount { selected_id = 0 }
+        self.selected_devices[player_id] = selected_id;
+
+        // Make sure the device wasn't selected 
+        if self.selected_devices[0] == self.selected_devices[1] {
+            let other_player = i32::abs(player_id as i32 - 1) as usize;
+            self.change_device(rl, other_player, step * -1);
+        }
+        
+        let text = if player_id == 0 { &mut self.device_1_txt } else { &mut self.device_2_txt };
+        text.text = connected_devices[selected_id as usize].get_name();
+        text.centralize();
+    }
+
     pub fn new(mode: GameMode) -> DeviceScreen {
         let mut is_singleplayer = false;
         let mut device_txt_colors = vec![
@@ -75,7 +110,6 @@ impl DeviceScreen {
         if mode != GameMode::Multiplayer {
             device_txt_colors[1] = ScreenElements::DISABLED_COLOR;
             is_singleplayer = true;
-
         }
 
         return DeviceScreen {
@@ -94,21 +128,32 @@ impl DeviceScreen {
             ],
             
             selected_devices: vec![-1, -1],
-            start_btn: Button::new(true, "Start", Vector2::new(0.5, 0.75)),
+            start_btn: Button::new(false, "Start", Vector2::new(0.5, 0.75)),
 
             is_active: true,
-            next_screen: MenuScreen::DeviceScreen,
+            selected_gamemode: mode,
         };
     }
 }
 
 impl UIScreen for DeviceScreen {
-    fn get_next_screen(&self, rl: &RaylibHandle) -> Box<dyn UIScreen> {
-        todo!()
+    fn get_next_scene(&self, rl: &RaylibHandle) -> Box<dyn GameScene> {
+        let devices = (get_device_by_id(self.selected_devices[0]),
+                       get_device_by_id(self.selected_devices[1]));
+
+        return Box::new(GameLoop::new(self.selected_gamemode, devices));
     }
 
     fn update(self: &mut Self, rl: &RaylibHandle) {
-        // TO DO
+        if self.start_btn.is_pressed(rl) { self.is_active = false; }
+
+             if self.device_1_btns[0].is_pressed(&rl) { self.change_device(rl, 0, -1); }
+        else if self.device_1_btns[1].is_pressed(&rl) { self.change_device(rl, 0,  1); }
+
+             if self.device_2_btns[0].is_pressed(&rl) { self.change_device(rl, 1, -1); }
+        else if self.device_2_btns[1].is_pressed(&rl) { self.change_device(rl, 1,  1); }
+
+        self.update_start_btn();
     }
 
     fn get_elements(self: &mut Self, rl: &RaylibHandle) -> ScreenElements {
@@ -121,6 +166,11 @@ impl UIScreen for DeviceScreen {
             buttons, vec![]
         )
     }
-
+    
+    fn get_next_screen(&self, rl: &RaylibHandle) -> Box<dyn UIScreen> {
+        panic!("There's no screen after this one, should've called 'get_next_scene' instead.");
+    }
     fn is_active(&self) -> bool { self.is_active }
+    fn goes_to_scene(&self) -> bool { true }
+    
 }

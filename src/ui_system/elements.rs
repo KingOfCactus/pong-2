@@ -48,11 +48,13 @@ impl Button {
     }
 
     pub fn is_pressed(self: &Self, rl: &RaylibHandle) -> bool {
+        if !self.enabled { return false; }
         let clicked = rl.is_mouse_button_pressed(MouseButton::MOUSE_LEFT_BUTTON);
         return self.is_focused(rl) && clicked;
     }
 
     pub fn is_focused(self: &Self, rl: &RaylibHandle) -> bool {
+        if !self.enabled { return false; }
         let mouse_pos = rl.get_mouse_position();
         return self.rect.check_collision_point_rec(mouse_pos);
     }
