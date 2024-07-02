@@ -33,6 +33,24 @@ struct DeviceScreen {
     selected_gamemode: GameMode
 }
 
+struct ConnectScreen {
+    title_txt: Text,
+    connect_btn: Button,
+
+    player_txt: Text,
+    device_txt: Text,
+    device_btns: Vec<Button>,
+    player_btns: Vec<Button>,
+
+    remote_ip_txt: Text,
+    remote_ip_field: TextField,
+
+    remote_info_txt: Text,
+    connection_status_txt: Text,
+
+    is_active: bool,
+}
+
 impl GameScene for MainMenu {
     fn update(self: &mut Self, rl: &RaylibHandle) {
         if !self.current_screen.is_active() {
@@ -90,7 +108,7 @@ impl GameScene for MainMenu {
 impl MainMenu { 
     pub fn new() -> MainMenu {
         return MainMenu {
-            current_screen: Box::new(TitleScreen::new()),
+            current_screen: Box::new(ConnectScreen::new()),
 
             local_multiplayer: Button::new(true, "Local Multiplayer", Vector2::new(0.5, 0.4)),
             online_multiplayer: Button::new(true, "Online Multiplayer", Vector2::new(0.5, 0.5)),

@@ -62,11 +62,11 @@ impl UIScreen for TitleScreen {
         }
     }
 
+    fn goes_to_scene(&self) -> bool { false }
+    fn is_active(&self) -> bool { self.is_active }
     fn get_next_scene(&self, rl: &RaylibHandle) -> Box<dyn GameScene> {
         panic!("This screen doesn't lead to a scene, should've called 'get_next_screen' instead.");
     }
-    fn is_active(&self) -> bool { self.is_active }
-    fn goes_to_scene(&self) -> bool { false }
 }
 
 
@@ -167,10 +167,74 @@ impl UIScreen for DeviceScreen {
         )
     }
     
+    fn goes_to_scene(&self) -> bool { true }
+    fn is_active(&self) -> bool { self.is_active }
     fn get_next_screen(&self, rl: &RaylibHandle) -> Box<dyn UIScreen> {
         panic!("There's no screen after this one, should've called 'get_next_scene' instead.");
     }
-    fn is_active(&self) -> bool { self.is_active }
-    fn goes_to_scene(&self) -> bool { true }
+}
+
+
+impl ConnectScreen {
+    pub fn new() -> ConnectScreen {
+        return ConnectScreen {
+            title_txt: Text::new("Select Player and Device:", Vector2::new(0.270, 0.25), Color::WHITE, 20),
+            connect_btn: Button::new(false, "Connect", Vector2::new(0.7415, 0.475)),
+            
+            player_txt: Text::new("Player 1 (Ball)", Vector2::new(0.270, 0.375), Color::new(10, 255, 255, 150), 20),
+            device_txt: Text::new("Device", Vector2::new(0.270, 0.475), Color::GRAY, 20),
+            
+            device_btns: vec![ 
+                Button::new(true, ">", Vector2::new(0.470, 0.475)),
+                Button::new(true, "<", Vector2::new(0.070, 0.475)),
+            ],
+            player_btns: vec![
+                Button::new(true, ">", Vector2::new(0.470, 0.375)),
+                Button::new(true, "<", Vector2::new(0.070, 0.375))
+            ],
+            
+            remote_ip_txt: Text::new("Remote Player Address:", Vector2::new(0.7415, 0.25), Color::WHITE, 20),
+
+            remote_ip_field: TextField::new(Regex::new("[.,0-9]").expect("Invalid regex"), 
+                                            "---.---.---.---", 185.0, 20, Vector2::new(0.7415, 0.375), 5.0, 
+                                            vec![Color::WHITE, Color::new(30, 30, 30, 255)], 15),
+            
+            is_active: true,
+            remote_info_txt: Text::new("\n(TODO)\n", Vector2::new(0.270, 0.7), Color::GRAY, 20),
+            connection_status_txt: Text::new("\nWaiting for connection...\n", Vector2::new(0.7415, 0.7), Color::GRAY, 20),
+            // Text::new("Remote client already\nselected player 1\nPing: 120 ms...", Vector2::new(0.3, 0.7), Color::GRAY, 20),
+            // Text::new("Started connection,\nwaiting response...\n", Vector2::new(0.7, 0.7), Color::GRAY, 20),
+            // Text::new("Timeout. Did the other\nplayer forgot to press\nthe 'Connect' button?", Vector2::new(0.75, 0.7), Color::GRAY, 20),
+        }
+    }
+}
+
+impl UIScreen for ConnectScreen {
+    fn get_next_screen(&self, rl: &RaylibHandle) -> Box<dyn UIScreen> {
+        todo!()
+    }
+
     
+    fn update(self: &mut Self, rl: &RaylibHandle) {
+        return;
+    }
+
+    fn get_elements(self: &mut Self, rl: &RaylibHandle) -> ScreenElements {
+        let mut buttons: Vec<Button> = vec![self.connect_btn.clone()];
+        buttons.append(&mut self.device_btns.clone());
+        buttons.append(&mut self.player_btns.clone());
+
+        return ScreenElements::new(rl, 
+            vec![self.title_txt.clone(), self.player_txt.clone(), self.device_txt.clone(), 
+                 self.remote_ip_txt.clone(), self.remote_info_txt.clone(), self.connection_status_txt.clone()], 
+            buttons, vec![self.remote_ip_field.clone()]
+        )
+    }
+
+
+    fn goes_to_scene(&self) -> bool { false }
+    fn is_active(&self) -> bool { self.is_active }
+    fn get_next_scene(&self, rl: &RaylibHandle) -> Box<dyn GameScene> {
+        panic!("This screen doesn't lead to a scene, should've called 'get_next_screen' instead.");
+    }
 }
