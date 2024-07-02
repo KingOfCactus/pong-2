@@ -41,14 +41,5 @@ pub struct GameLoop {
 
 pub struct MainMenu {
     current_screen: Box<dyn UIScreen>,
-
-    local_multiplayer: Button,
-    online_multiplayer: Button,
-
-    connect_txts: Vec<Text>,
-    connect_btns: Vec<Button>,
-    remove_ip_field: TextField,
-
-    selected_mode: GameMode,
     is_active: bool
 }
