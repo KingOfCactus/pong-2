@@ -11,7 +11,7 @@ impl TitleScreen {
 
     fn pressed_multiplayer(self: &mut Self) {
         self.selected_mode = GameMode::Multiplayer;
-        self.next_screen = MenuScreen::DeviceScreen;
+        self.next_screen = MenuScreen::MultiplayerScreen;
         self.is_active = false;
     }
 
@@ -39,6 +39,14 @@ impl TitleScreen {
 }
 
 impl UIScreen for TitleScreen {
+    fn get_next_screen(&self, rl: &RaylibHandle) -> Box<dyn UIScreen> {
+        match self.next_screen {
+            MenuScreen::DeviceScreen => return Box::new(DeviceScreen::new(self.selected_mode)),
+            MenuScreen::MultiplayerScreen => return Box::new(MultiplayerScreen::new()),
+            _ => panic!("Invalid next screen, how did you manage to do this?")
+        }
+    }
+
     fn update(self: &mut Self, rl: &RaylibHandle) {
              if self.singleplayer_btn.is_pressed(&rl) { self.pressed_singleplayer(); }
         else if self.multiplayer_btn.is_pressed(&rl) { self.pressed_multiplayer() }
@@ -54,13 +62,7 @@ impl UIScreen for TitleScreen {
         )
     }
 
-    fn get_next_screen(&self, rl: &RaylibHandle) -> Box<dyn UIScreen> {
-        match self.next_screen {
-            MenuScreen::DeviceScreen => return Box::new(DeviceScreen::new(self.selected_mode)),
-            MenuScreen::MultiplayerScreen => todo!(),
-            _ => todo!()
-        }
-    }
+
 
     fn goes_to_scene(&self) -> bool { false }
     fn is_active(&self) -> bool { self.is_active }
@@ -69,6 +71,50 @@ impl UIScreen for TitleScreen {
     }
 }
 
+impl MultiplayerScreen {
+    pub fn new() -> MultiplayerScreen {
+        MultiplayerScreen {
+            local_multiplayer: Button::new(true, "Local Multiplayer", Vector2::new(0.5, 0.4)),
+            online_multiplayer: Button::new(true, "Online Multiplayer", Vector2::new(0.5, 0.5)),
+            next_screen: MenuScreen::DeviceScreen,
+            is_active: true
+        }
+    }
+}
+
+impl UIScreen for MultiplayerScreen {
+    fn get_next_screen(&self, rl: &RaylibHandle) -> Box<dyn UIScreen> {
+        match self.next_screen {
+            MenuScreen::DeviceScreen => return Box::new(DeviceScreen::new(GameMode::Multiplayer)),
+            MenuScreen::ConnectScreen => return Box::new(ConnectScreen::new()),
+            _ => panic!("Invalid next screen, how did you manage to do this?")
+        }
+    }
+
+    fn update(self: &mut Self, rl: &RaylibHandle) {
+        if self.local_multiplayer.is_pressed(rl) {
+            self.is_active = false;
+            self.next_screen = MenuScreen::DeviceScreen;
+        }
+
+        if self.online_multiplayer.is_pressed(rl) {
+            self.is_active = false;
+            self.next_screen = MenuScreen::ConnectScreen;
+        }
+    }
+
+    fn get_elements(self: &mut Self, rl: &RaylibHandle) -> ScreenElements {
+        return ScreenElements::new(rl, vec![], 
+            vec![self.local_multiplayer.clone(), self.online_multiplayer.clone()], vec![]
+        );
+    }
+
+    fn goes_to_scene(&self) -> bool { false }
+    fn is_active(&self) -> bool { self.is_active }
+    fn get_next_scene(&self, rl: &RaylibHandle) -> Box<dyn GameScene> {
+        panic!("This screen doesn't lead to a scene, should've called 'get_next_screen' instead.");
+    }
+}
 
 impl DeviceScreen {
     fn update_start_btn(self: &mut Self) {

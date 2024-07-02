@@ -19,6 +19,14 @@ struct TitleScreen {
     next_screen: MenuScreen
 }
 
+struct MultiplayerScreen {
+    local_multiplayer: Button,
+    online_multiplayer: Button,
+
+    is_active: bool,
+    next_screen: MenuScreen
+}
+
 struct DeviceScreen {
     title_txt: Text,
     device_1_txt: Text,
@@ -95,11 +103,10 @@ impl GameScene for MainMenu {
     }
 }
 
-
 impl MainMenu { 
     pub fn new() -> MainMenu {
         return MainMenu {
-            current_screen: Box::new(ConnectScreen::new()),
+            current_screen: Box::new(TitleScreen::new()),
             is_active: true
         }            
     }
