@@ -1,6 +1,4 @@
 mod ui_screens;
-use std::any::Any;
-
 use regex::Regex;
 
 use super::*;
@@ -50,43 +48,6 @@ impl GameScene for MainMenu {
 
         // self.remove_ip_field.update(rl, rl.get_mouse_position());
         // self.connect_btns[4].enabled = self.remove_ip_field.is_ipv4();
-
-        // // Return if mouse isn't clicking
-        // if !rl.is_mouse_button_pressed(MouseButton::MOUSE_LEFT_BUTTON) {
-        //     return;
-        // }
-        
-        // // Check if buttons were clicked
-        // let mouse_pos = rl.get_mouse_position();
-        // match self.current_screen {
-        //     MenuScreen::ConnectScreen => {
-        //     },
-
-        //     MenuScreen::MultiplayerScreen => {
-        //         if self.local_multiplayer.is_focused(mouse_pos) { self.show_device_screen(false); }
-        //         if self.online_multiplayer.is_focused(mouse_pos) { self.show_connect_screen(); }
-        //     },
-            
-        //     MenuScreen::TitleScreen => {
-        //         if self.singleplayer.is_focused(mouse_pos) { self.show_device_screen(true); }
-        //         if self.multiplayer.is_focused(mouse_pos) { self.show_multiplayer_screen(); }
-        //         if self.quit.is_focused(mouse_pos) { self.quit(); }
-        //     },
-
-        //     MenuScreen::DeviceScreen => {
-        //         // Player 1
-        //         if self.select_devices_btns[0].is_focused(mouse_pos) { self.select_input_device(0,  1, rl) } // '>'
-        //         if self.select_devices_btns[1].is_focused(mouse_pos) { self.select_input_device(0, -1, rl) } // '<'
-                
-        //         if self.selected_mode == GameMode::Multiplayer {
-        //             // Player 2
-        //             if self.select_devices_btns[2].is_focused(mouse_pos) { self.select_input_device(1,  1, rl) } // '>'
-        //             if self.select_devices_btns[3].is_focused(mouse_pos) { self.select_input_device(1, -1, rl) } // '<'
-        //             if self.select_devices_btns[4].is_focused(mouse_pos) { self.start_game() }
-        //         }
-        //         else { if self.select_devices_btns[2].is_focused(mouse_pos) { self.start_game() } }
-        //     }
-        // }
     }
 
     fn draw(&mut self, rl: &mut RaylibHandle, thread: &RaylibThread) {
@@ -167,27 +128,6 @@ impl MainMenu {
                 Button::new(true, "<", Vector2::new(0.070, 0.475)),
 
                 Button::new(false, "Connect", Vector2::new(0.7415, 0.475)),
-            ],
-
-
-
-            selected_devices: vec![-1, -1],
-            select_devices_txts: vec![
-                Text::new("Select Players Input:", Vector2::new(0.5, 0.25), Color::WHITE, 20),
-                Text::new("Player 1", Vector2::new(0.5, 0.4), Color::new(10, 255, 255, 150), 20),
-                Text::new("Player 2", Vector2::new(0.5, 0.5), Color::new(255, 40, 0, 130), 20)
-            ],
-
-            select_devices_btns: vec![
-                // Player 1
-                Button::new(true, ">", Vector2::new(0.7, 0.4)),
-                Button::new(true, "<", Vector2::new(0.3, 0.4)),
-                
-                // Player 2
-                Button::new(true, ">", Vector2::new(0.7, 0.5)),
-                Button::new(true, "<", Vector2::new(0.3, 0.5)),
-
-                Button::new(true, "Start", Vector2::new(0.5, 0.75)),
             ],
             
             is_active: true,
