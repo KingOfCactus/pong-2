@@ -213,10 +213,10 @@ impl UIScreen for ConnectScreen {
     fn get_next_screen(&self, rl: &RaylibHandle) -> Box<dyn UIScreen> {
         todo!()
     }
-
     
     fn update(self: &mut Self, rl: &RaylibHandle) {
-        return;
+        self.connect_btn.enabled = self.remote_ip_field.is_ipv4();
+        self.remote_ip_field.update(rl);
     }
 
     fn get_elements(self: &mut Self, rl: &RaylibHandle) -> ScreenElements {

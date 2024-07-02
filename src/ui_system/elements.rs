@@ -61,15 +61,18 @@ impl Button {
 }
 
 impl TextField {
+    fn is_focused(self: &mut Self, rl: &RaylibHandle) -> bool {
+        let mouse_pos = rl.get_mouse_position();
+        return self.rects[1].check_collision_point_rec(mouse_pos);
+    }
+
     pub fn is_ipv4(self: &mut Self) -> bool{
         let regex = Regex::new("([0-9]{1,3})+([.]+[0-9]{1,3}){3}").expect("Invalid Regular Expression");
         return regex.is_match(&self.text.text);
-
-        todo!("consider moving this code out from the TextField struct");
     }
 
-    pub fn update(self: &mut Self, rl: &RaylibHandle, pointer: Vector2) {        
-        let ascii = unsafe { ffi::GetKeyPressed() as u8 }; // gey_key_pressed() uses rl as mutable, can't use
+    pub fn update(self: &mut Self, rl: &RaylibHandle) {        
+        let ascii = unsafe { ffi::GetKeyPressed() as u8 }; // gey_key_pressed() uses rl as mutable :angry:
         if ascii == 0 { return; }
         
         let is_placeholder = self.text.text == self.placeholder;        
@@ -85,11 +88,10 @@ impl TextField {
         }
         else if is_full { return; }
 
-        
+        let focused = self.is_focused(rl);
         let input = (ascii as char).to_string(); 
         let valid_input = self.format.is_match(&input);
-        let focused = self.rects[1].check_collision_point_rec(pointer);
-
+        
         if !focused || !valid_input { return; }
 
         if self.text.text == self.placeholder {
