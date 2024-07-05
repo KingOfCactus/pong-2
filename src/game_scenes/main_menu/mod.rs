@@ -45,8 +45,15 @@ struct ConnectScreen {
     title_txt: Text,
     connect_btn: Button,
 
+    player_id: i32,
     player_txt: Text,
+    
+    player_names:Vec<String>,
+    player_colors: Vec<Color>,
+
+    device_id: i32,
     device_txt: Text,
+
     device_btns: Vec<Button>,
     player_btns: Vec<Button>,
 
