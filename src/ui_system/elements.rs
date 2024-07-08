@@ -72,7 +72,7 @@ impl TextField {
     }
 
     pub fn update(self: &mut Self, rl: &RaylibHandle) {        
-        let ascii = unsafe { ffi::GetKeyPressed() as u8 }; // gey_key_pressed() uses rl as mutable :angry:
+        let ascii = unsafe { ffi::GetKeyPressed() as u8 }; // gey_key_pressed() uses rl as mutable 😡😡😡
         if ascii == 0 { return; }
         
         let is_placeholder = self.text.text == self.placeholder;        

@@ -1,8 +1,11 @@
-mod ui_screens;
-use regex::Regex;
+mod title_screen;
+mod device_screen;
+mod connect_screen;
+mod multiplayer_screen;
 
 use super::*;
 use crate::utils::*;
+use regex::Regex;
 
 pub enum MenuScreen { TitleScreen, DeviceScreen, ConnectScreen, MultiplayerScreen }
 
