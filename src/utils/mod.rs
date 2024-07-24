@@ -1,12 +1,48 @@
 use std::fs;
+use std::env;
 use std::io::Write;
 use raylib::prelude::*;
 use raylib::prelude::Vector2;
 
-use crate::input_system::{InputDevice, KeyboardInput, GamepadInput};
+use crate::input_system::*;
+use crate::networking::*;
 
 pub const SCREEN_SIZE: Vector2 = Vector2 { x: 640.0, y: 480.0 };
 const MAX_CONNECTED_GAMEPADS: usize = 4;
+
+pub fn is_debug_session() -> bool {
+    let debug = env::var("DEBUG");
+    match debug {
+        Ok(_) => if debug.unwrap().eq("1") { true } else { false} 
+        _ => false
+    }
+}
+
+// ugly test code, proceed with caution
+pub fn debug() {
+    let remote = env::var("REMOTE").expect("REMOTE variable not set");
+    let mut net = NetworkManager::new(remote.to_string());
+    print!("{}[2J", 27 as char);
+
+    while (true) {
+        println!("1) Punch hole");
+        println!("2) Listen");
+
+        let mut input = "".to_string();
+        std::io::stdin().read_line(&mut input);
+        input = input.trim().to_string();
+        
+        if input == "1" {
+            net.punch_hole()
+        }
+        else if input == "2" {
+            net.listen();
+        }
+        
+        println!("");println!("");println!("");println!("");println!("");
+    }
+}
+
 
 pub fn init_window() -> (RaylibHandle, RaylibThread) {
     let (mut rl_handle, _thread) = raylib::init()

@@ -8,7 +8,9 @@ mod utils;
 use game_scenes::*;
 use utils::*;
 
+
 fn main() {
+    if is_debug_session() { debug() }     
     let (mut rl, thread) = init_window();
     let mut scene: Box<dyn GameScene> = Box::new(MainMenu::new());
 
