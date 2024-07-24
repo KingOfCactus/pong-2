@@ -1,14 +1,17 @@
+use std::any::TypeId;
 use std::fs;
 use std::env;
 use std::io::Write;
 use raylib::prelude::*;
 use raylib::prelude::Vector2;
 
+
 use crate::input_system::*;
 use crate::networking::*;
 
 pub const SCREEN_SIZE: Vector2 = Vector2 { x: 640.0, y: 480.0 };
 const MAX_CONNECTED_GAMEPADS: usize = 4;
+
 
 pub fn is_debug_session() -> bool {
     let debug = env::var("DEBUG");
@@ -20,6 +23,13 @@ pub fn is_debug_session() -> bool {
 
 // ugly test code, proceed with caution
 pub fn debug() {
+    let m = NetMessage::new::<i32>(12);
+    println!("{}", m.type_id == TypeId::of::<u32>());
+    println!("{}", m.get_message::<i32>());
+
+
+
+    
     let remote = env::var("REMOTE").expect("REMOTE variable not set");
     let mut net = NetworkManager::new(remote.to_string());
     print!("{}[2J", 27 as char);
