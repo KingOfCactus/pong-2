@@ -1,28 +1,56 @@
-use std::any::{Any, TypeId};
 use std::net::UdpSocket;
 use std::time::Duration;
+use serde::{Serialize, Deserialize};
 
-pub struct NetMessage {
-    pub type_id: TypeId,
-    data: Vec<u8>,
-    size: u8
-}   
+#[derive(Serialize, Deserialize, PartialEq, Debug)]
+pub enum MessageContentType { I8, I16, I32, I64, ISIZE,
+                              U8, U16, U32, U64, USIZE,
+                              F32, F64, BOOL, CHAR,
+                              STRING, STR 
+                            }
 
-impl NetMessage {
-    pub fn new<T: serde::Serialize + 'static>(msg: T) -> NetMessage {
-        let encoded_msg = bincode::serialize(&msg).expect("Could not serialize packet data");
-        
+#[derive(Serialize, Deserialize)]
+pub struct NetworkMessage<T> {
+    pub size: u8,
+    pub content_type: MessageContentType,
+    pub content: Box<T>
+}
+
+impl<T: 'static> NetworkMessage<T> {
+    pub fn new(msg: T) -> NetworkMessage<T> {        
         return Self {
-            type_id: msg.type_id(),
-            size: encoded_msg.len() as u8,
-            data: encoded_msg
+            content_type: Self::get_content_type(),
+            content: Box::new(msg),
+            size: 23
         }
     }
 
-    pub fn get_message<T: for<'a> serde::Deserialize<'a>>(&self) -> T {
-        return bincode::deserialize::<T>(&self.data).expect("Could not deserialize packet data");
-    }
+    fn get_content_type() -> MessageContentType{
+        let type_name = std::any::type_name::<T>();
+        match type_name {
+            "i8" => MessageContentType::I8,
+            "i16" => MessageContentType::I16,
+            "i32" => MessageContentType::I32,
+            "i64" => MessageContentType::I64,
+            "isize" => MessageContentType::ISIZE,
 
+            "u8" => MessageContentType::U8,
+            "u16" => MessageContentType::U16,
+            "u32" => MessageContentType::U32,
+            "u64" => MessageContentType::U64,
+            "usize" => MessageContentType::USIZE,
+            
+            "f32" => MessageContentType::F32,
+            "f64" => MessageContentType::F64,
+
+            "&str" => MessageContentType::STR,
+            "char" => MessageContentType::CHAR,            
+            "alloc::string::String" => MessageContentType::STRING,
+            
+            "bool" => MessageContentType::BOOL,
+            _ => panic!("Tried to use unknown type as NetworkMessage content: {}", type_name)
+        }
+    }
 }
 
 pub struct NetworkManager {

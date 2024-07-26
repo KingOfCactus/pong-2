@@ -1,7 +1,10 @@
+use std::any::Any;
 use std::any::TypeId;
 use std::fs;
 use std::env;
 use std::io::Write;
+use bincode::deserialize;
+use bincode::serialize;
 use raylib::prelude::*;
 use raylib::prelude::Vector2;
 
@@ -23,9 +26,14 @@ pub fn is_debug_session() -> bool {
 
 // ugly test code, proceed with caution
 pub fn debug() {
-    let m = NetMessage::new::<i32>(12);
-    println!("{}", m.type_id == TypeId::of::<u32>());
-    println!("{}", m.get_message::<i32>());
+    let msg = NetworkMessage::new(1 as usize);
+    let b = serialize(&msg).unwrap();
+    let header = decode_msg_header(&b);
+
+    println!("{:?}", header.1);
+
+    //let dm: NetworkMessage = deserialize(&b).expect("Could not deserialize");
+   // println!("{}", dm);
 
 
 
@@ -53,6 +61,10 @@ pub fn debug() {
     }
 }
 
+
+pub fn decode_msg_header(msg: &[u8]) -> (u8, MessageContentType) {
+    return (msg[0], unsafe { std::mem::transmute(msg[1]) });
+}
 
 pub fn init_window() -> (RaylibHandle, RaylibThread) {
     let (mut rl_handle, _thread) = raylib::init()
