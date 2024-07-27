@@ -24,13 +24,42 @@ pub fn is_debug_session() -> bool {
     }
 }
 
-// ugly test code, proceed with caution
+// very ugly test code, proceed with caution
 pub fn debug() {
-    let msg = NetworkMessage::new(1 as usize);
+    let msg = NetworkMessage::new("Big string jumpscare: 1231234012347033481-230984902840-293");
     let b = serialize(&msg).unwrap();
     let header = decode_msg_header(&b);
 
-    println!("{:?}", header.1);
+    println!("[Header] {}, {:?}", header.0 ,header.1);
+
+    match header.1 {
+        MessageContentType::STR => {
+            let msg: NetworkMessage<String> = deserialize(&b).unwrap();
+            println!("[Content] {}", msg.content);
+        },
+        MessageContentType::I32 => {
+            let msg: NetworkMessage<i32> = deserialize(&b).unwrap();
+            println!("[Content] {}", msg.content);
+        },
+        MessageContentType::F32 => {
+            let msg: NetworkMessage<f32> = deserialize(&b).unwrap();
+            println!("[Content] {}", msg.content);
+        },
+        MessageContentType::CHAR => {
+            let msg: NetworkMessage<char> = deserialize(&b).unwrap();
+            println!("[Content] {}", msg.content);
+        },
+        MessageContentType::BOOL => {
+            let msg: NetworkMessage<bool> = deserialize(&b).unwrap();
+            println!("[Content] {}", msg.content);
+        },
+        _ => println!("Unknown type")
+    }
+
+    print!("[Encoded ({})] ", b.len());
+    for a in b { print!("{}, ", a); }
+    println!();
+    panic!();
 
     //let dm: NetworkMessage = deserialize(&b).expect("Could not deserialize");
    // println!("{}", dm);

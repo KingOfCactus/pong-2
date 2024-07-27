@@ -1,5 +1,6 @@
 use std::net::UdpSocket;
 use std::time::Duration;
+use bincode::serialized_size;
 use serde::{Serialize, Deserialize};
 
 #[derive(Serialize, Deserialize, PartialEq, Debug)]
@@ -16,13 +17,16 @@ pub struct NetworkMessage<T> {
     pub content: Box<T>
 }
 
-impl<T: 'static> NetworkMessage<T> {
-    pub fn new(msg: T) -> NetworkMessage<T> {        
-        return Self {
+impl<T: Serialize + 'static> NetworkMessage<T> {
+    pub fn new(content: T) -> NetworkMessage<T> {    
+        let mut msg = NetworkMessage {
             content_type: Self::get_content_type(),
-            content: Box::new(msg),
-            size: 23
-        }
+            content: Box::new(content),
+            size: 0
+        };
+        
+        msg.size = serialized_size(&msg).unwrap() as u8;
+        return msg;
     }
 
     fn get_content_type() -> MessageContentType{
