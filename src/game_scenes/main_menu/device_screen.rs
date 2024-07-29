@@ -11,7 +11,7 @@ impl DeviceScreen {
     }
 
     fn change_device(self: &mut Self, rl: &RaylibHandle, player_id: usize, step: i32) {
-        let mut connected_devices = get_connected_devices(&rl);
+        let mut connected_devices = InputUtils::get_connected_devices(&rl);
         let devices_amount = connected_devices.len() as i32;
 
         let mut new_id = self.selected_devices[player_id] + step;
@@ -68,8 +68,8 @@ impl DeviceScreen {
 
 impl UIScreen for DeviceScreen {
     fn get_next_scene(&self, rl: &RaylibHandle) -> Box<dyn GameScene> {
-        let devices = (get_device_by_id(self.selected_devices[0]),
-                       get_device_by_id(self.selected_devices[1]));
+        let devices = (InputUtils::get_device_by_id(self.selected_devices[0]),
+                       InputUtils::get_device_by_id(self.selected_devices[1]));
 
         return Box::new(GameLoop::new(self.selected_gamemode, devices));
     }

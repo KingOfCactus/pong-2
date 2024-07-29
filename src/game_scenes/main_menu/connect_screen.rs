@@ -13,7 +13,7 @@ impl ConnectScreen {
     }
 
     fn change_device(self: &mut Self, rl: &RaylibHandle, step: i32) {
-        let mut connected_devices = get_connected_devices(&rl);
+        let mut connected_devices = InputUtils::get_connected_devices(&rl);
         let devices_amount = connected_devices.len() as i32;
 
         let mut new_id = self.device_id + step;

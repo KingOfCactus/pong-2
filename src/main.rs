@@ -10,8 +10,9 @@ use utils::*;
 
 
 fn main() {
-    if is_debug_session() { debug() }     
-    let (mut rl, thread) = init_window();
+    if DebugUtils::is_debug_session() { DebugUtils::debug() }   
+      
+    let (mut rl, thread) = MiscUtils::init_window();
     let mut scene: Box<dyn GameScene> = Box::new(MainMenu::new());
 
     // Each frame

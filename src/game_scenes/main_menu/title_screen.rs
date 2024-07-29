@@ -9,7 +9,7 @@ impl TitleScreen {
             ),
             
             hiscore_txt: Text::new(
-                &format!("HiScore: {}", get_highscore()), Vector2::new(0.5, 0.95),
+                &format!("HiScore: {}", MiscUtils::get_highscore()), Vector2::new(0.5, 0.95),
                 Color::WHITE, 16
             ),
 

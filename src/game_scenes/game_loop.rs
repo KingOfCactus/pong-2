@@ -146,7 +146,7 @@ impl GameLoop {
         
         // Check for a new highscore
         if self.score > self.hiscore { 
-            save_highscore(self.score);
+            MiscUtils::save_highscore(self.score);
             self.hiscore = self.score;
         }
         
@@ -197,7 +197,7 @@ impl GameLoop {
              checkpoint: 0,
              respawn_timer: 0.0,
  
-             hiscore: get_highscore(),
+             hiscore: MiscUtils::get_highscore(),
              game_mode: selected_mode,
              score_color: Color::DARKGREEN,
  
