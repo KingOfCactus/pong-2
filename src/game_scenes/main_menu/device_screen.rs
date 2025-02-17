@@ -67,7 +67,7 @@ impl DeviceScreen {
 }
 
 impl UIScreen for DeviceScreen {
-    fn get_next_scene(&self, rl: &RaylibHandle) -> Box<dyn GameScene> {
+    fn get_next_scene(&self, _rl: &RaylibHandle) -> Box<dyn GameScene> {
         let devices = (InputUtils::get_device_by_id(self.selected_devices[0]),
                        InputUtils::get_device_by_id(self.selected_devices[1]));
 
@@ -99,7 +99,7 @@ impl UIScreen for DeviceScreen {
     
     fn goes_to_scene(&self) -> bool { true }
     fn is_active(&self) -> bool { self.is_active }
-    fn get_next_screen(&self, rl: &RaylibHandle) -> Box<dyn UIScreen> {
+    fn get_next_screen(&self, _rl: &RaylibHandle) -> Box<dyn UIScreen> {
         panic!("There's no screen after this one, should've called 'get_next_scene' instead.");
     }
 }

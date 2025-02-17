@@ -7,8 +7,6 @@ use crate::game_objects::*;
 use crate::ui_system::*;
 use crate::input_system::PlayerInput;
 
-use self::main_menu::*;
-
 #[derive(Clone, Copy, PartialEq)]
 pub enum GameMode { None, Singleplayer, Multiplayer }
 

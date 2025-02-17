@@ -25,10 +25,9 @@ impl TitleScreen {
 }
 
 impl UIScreen for TitleScreen {
-    fn get_next_screen(&self, rl: &RaylibHandle) -> Box<dyn UIScreen> {
+    fn get_next_screen(&self, _rl: &RaylibHandle) -> Box<dyn UIScreen> {
         match self.next_screen {
             MenuScreen::DeviceScreen => return Box::new(DeviceScreen::new(self.selected_mode)),
-            MenuScreen::MultiplayerScreen => return Box::new(MultiplayerScreen::new()),
             _ => panic!("Invalid next screen, how did you manage to do this?")
         }
     }
@@ -64,7 +63,7 @@ impl UIScreen for TitleScreen {
 
     fn goes_to_scene(&self) -> bool { false }
     fn is_active(&self) -> bool { self.is_active }
-    fn get_next_scene(&self, rl: &RaylibHandle) -> Box<dyn GameScene> {
+    fn get_next_scene(&self, _rl: &RaylibHandle) -> Box<dyn GameScene> {
         panic!("This screen doesn't lead to a scene, should've called 'get_next_screen' instead.");
     }
 }

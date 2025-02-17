@@ -1,13 +1,11 @@
 mod title_screen;
 mod device_screen;
-mod connect_screen;
-mod multiplayer_screen;
 
 use super::*;
 use crate::utils::*;
 use regex::Regex;
 
-pub enum MenuScreen { TitleScreen, DeviceScreen, ConnectScreen, MultiplayerScreen }
+pub enum MenuScreen { TitleScreen, DeviceScreen }
 
 struct TitleScreen {
     title_txt: Text,
@@ -17,14 +15,6 @@ struct TitleScreen {
     singleplayer_btn: Button,  
     multiplayer_btn: Button,
     quit_btn: Button,
-
-    is_active: bool,
-    next_screen: MenuScreen
-}
-
-struct MultiplayerScreen {
-    local_multiplayer: Button,
-    online_multiplayer: Button,
 
     is_active: bool,
     next_screen: MenuScreen

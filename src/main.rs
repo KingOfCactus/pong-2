@@ -2,16 +2,13 @@ mod ui_system;
 mod input_system;
 mod game_objects;
 mod game_scenes;
-mod networking;
 mod utils;
 
 use game_scenes::*;
 use utils::*;
 
 
-fn main() {
-    if DebugUtils::is_debug_session() { DebugUtils::debug() }   
-      
+fn main() {      
     let (mut rl, thread) = MiscUtils::init_window();
     let mut scene: Box<dyn GameScene> = Box::new(MainMenu::new());
 
