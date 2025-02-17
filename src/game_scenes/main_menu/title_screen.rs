@@ -43,7 +43,7 @@ impl UIScreen for TitleScreen {
 
         if self.multiplayer_btn.is_pressed(&rl) { 
             self.selected_mode = GameMode::Multiplayer;
-            self.next_screen = MenuScreen::MultiplayerScreen;
+            self.next_screen = MenuScreen::DeviceScreen;
             self.is_active = false;
             return;
         }
