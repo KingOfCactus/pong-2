@@ -34,32 +34,6 @@ struct DeviceScreen {
     selected_gamemode: GameMode
 }
 
-struct ConnectScreen {
-    title_txt: Text,
-    connect_btn: Button,
-
-    player_id: i32,
-    player_txt: Text,
-    
-    player_names:Vec<String>,
-    player_colors: Vec<Color>,
-
-    device_id: i32,
-    device_txt: Text,
-
-    device_btns: Vec<Button>,
-    player_btns: Vec<Button>,
-
-    remote_ip_txt: Text,
-    remote_ip_field: TextField,
-
-    remote_info_txt: Text,
-    connection_status_txt: Text,
-
-    is_active: bool,
-}
-
-
 impl GameScene for MainMenu {
     fn update(self: &mut Self, rl: &RaylibHandle) {
         if !self.current_screen.is_active() {
