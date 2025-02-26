@@ -15,7 +15,8 @@ pub trait GameScene {
     fn get_next_scene(&self, rl: &RaylibHandle) -> Box<dyn GameScene>;
     
     fn update(&mut self, rl: &RaylibHandle);
-    fn draw(&mut self, rl: &mut RaylibHandle, thread: &RaylibThread); // Needs to be the last called method, since it drops the RaylibHandle
+    fn draw(&mut self, rl: &mut RaylibHandle, thread: &RaylibThread); // Needs to be the last called method, 
+                                                                      // since it drops the RaylibHandle
 }
 
 pub struct GameLoop {    
